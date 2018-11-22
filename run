@@ -1,0 +1,3 @@
+#!/bin/sh
+clear
+./bin/morsamdesa -c morsamdesa.conf -p sounder_we $@ 2>&1 | tee log/mdesa.log &
