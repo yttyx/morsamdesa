@@ -78,7 +78,12 @@ Reboot. The permissions on /dev/hidraw* device should appear as follows:
     0 crw-rw-r-- 1 root plugdev ... hidraw0
     0 crw-rw-r-- 1 root plugdev ... hidraw1
 
-Download the morsamdesa source zip file from this page. Extract the files.
+Create a directory in which to build morsamdesa, and make it current
+
+    mkdir ~/morsamdesa
+    cd ~/morsamdesa
+
+Download the morsamdesa source zip file from [this page](https://github.com/yttyx/morsamdesa) and extract the files
 
     unzip -o morsamdesa.zip
 
