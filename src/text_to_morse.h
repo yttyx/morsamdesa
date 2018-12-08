@@ -49,7 +49,7 @@ public:
     void
     convert( string & message, bool add_stx );
 
-    const char *
+    string
     get_message();
 
     eMorseElement
@@ -58,7 +58,7 @@ public:
 private:
 
     void
-    prepare_message( string & message, bool add_stx );
+    prepare_message( const string & message, bool add_stx );
 
     void
     convert_to_morse( char ch );
@@ -79,6 +79,7 @@ private:
     unsigned int text_count_;
 
     string       text_formatted_;           // The contents of text_ message formatted in a more friendly way for logging (i.e. not uppercase)
+    string       mnemonic_;                 // Message source, supplied as the prefix to a message
 
     eMorseElement morse_elements_[ 1024 ];
     unsigned int  morse_element_count_;

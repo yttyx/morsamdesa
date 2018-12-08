@@ -66,6 +66,7 @@ C_text_to_morse::~C_text_to_morse()
 void
 C_text_to_morse::convert( string & message, bool add_stx )
 {
+    // Format message into text_
     prepare_message( message, add_stx );
 
     log_writeln_fmt( C_log::LL_VERBOSE_2, "C_text_to_morse::convert() (after prepare) : %s", text_ );
@@ -107,7 +108,7 @@ C_text_to_morse::convert( string & message, bool add_stx )
 
 // Returns a pointer to the message after preparation for its conversion to Morse elements, and
 // following further conversion to a more logging-friendly format.
-const char *
+string
 C_text_to_morse::get_message()
 {
     text_formatted_ = ( text_[ 0 ] == STX ) ? text_ + 2 : text_;
@@ -117,7 +118,7 @@ C_text_to_morse::get_message()
         text_formatted_.at( ii ) = tolower( text_formatted_.at( ii ) );
     }
 
-    return text_formatted_.c_str();
+    return ( mnemonic_.length() > 0 ) ? mnemonic_ + " " + text_formatted_ : text_formatted_;
 }
 
 eMorseElement
@@ -132,7 +133,7 @@ C_text_to_morse::get_element()
 }
 
 void
-C_text_to_morse::prepare_message( string & message, bool add_stx )
+C_text_to_morse::prepare_message( const string & message, bool add_stx )
 {
     text_count_ = 0;
 
@@ -146,7 +147,18 @@ C_text_to_morse::prepare_message( string & message, bool add_stx )
     unsigned int message_curr   = 0;
     bool         in_space       = false;
 
-    for ( ; ( text_count_ < ( sizeof( text_ ) - 10 ) ) && ( message_curr < message_length ); )
+    // If a mnemonic is present, skip over it
+    if ( ( message[ 0 ] == '[' ) && ( message[ 4 ] == ']' ) )
+    {
+        message_curr   = 5;
+        mnemonic_      = message.substr( 0, 5 );
+    }
+    else
+    {
+        mnemonic_ = "";
+    }
+
+    while ( ( text_count_ < ( sizeof( text_ ) - 10 ) ) && ( message_curr < message_length ) )
     {
         if ( ! convert_special_character( message, message_curr, text_, text_count_ ) )
         {

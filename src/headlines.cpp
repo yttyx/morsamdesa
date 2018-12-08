@@ -34,16 +34,18 @@ extern C_log log;
 
 
 C_headlines::C_headlines( const string & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max )
-    : url_( url ),
-      filter_strings_( filters ),
+    : filter_strings_( filters ),
       poll_delay_min_( period_min ),
       poll_delay_max_( period_max )
 {
     assert( url.length() > 0 );
     assert( poll_delay_max_ > poll_delay_min_ );
 
+    url_          = url.substr( MNEMONIC_LENGTH );
+    url_mnemonic_ = url.substr( 0, MNEMONIC_LENGTH );
+
     headlines_curr_ = 0;
-    curl_           = new C_curl( url );
+    curl_           = new C_curl( url_ );
     
     curl_->set_callback( this );
 }
@@ -192,11 +194,11 @@ C_headlines::extract_headlines( const char *xml, size_t xml_len, eFeedType feed_
     }
     catch ( exception & ex )
     {
-        log_writeln_fmt( C_log::LL_ERROR, "Exception parsing headlines XML: %s", ex.what() );
+        log_writeln_fmt( C_log::LL_ERROR, "Exception parsing headlines XML [%s]: %s", url_mnemonic_.c_str(), ex.what() );
     }
     catch ( ... )
     {
-        log_writeln( C_log::LL_ERROR, "Exception parsing headlines XML" );
+        log_writeln_fmt( C_log::LL_ERROR, "Exception parsing headlines XML [%s]", url_mnemonic_.c_str() );
     }
 
     if ( xpathObjectPtr )
@@ -205,7 +207,7 @@ C_headlines::extract_headlines( const char *xml, size_t xml_len, eFeedType feed_
     }
     else
     {
-        log_writeln( C_log::LL_ERROR, "C_headlines::extract_headlines(): xpath request failed." );
+        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: xpath request failed.", url_mnemonic_.c_str() );
     }
     if ( xpathContextPtr )
     {
@@ -213,7 +215,7 @@ C_headlines::extract_headlines( const char *xml, size_t xml_len, eFeedType feed_
     }
     else
     {
-        log_writeln( C_log::LL_ERROR, "C_headlines::extract_headlines(): Failed to create xpathContextPtr." );
+        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: Failed to create xpathContextPtr.", url_mnemonic_.c_str() );
     }
     if ( doc )
     {
@@ -221,7 +223,7 @@ C_headlines::extract_headlines( const char *xml, size_t xml_len, eFeedType feed_
     }
     else
     {
-        log_writeln( C_log::LL_ERROR, "C_headlines::extract_headlines(): XML parsing failed." );
+        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: XML parsing failed.", url_mnemonic_.c_str() );
     }
 
     xmlCleanupParser();
@@ -255,7 +257,7 @@ C_headlines::add_headlines( xmlDocPtr doc, xmlNodeSetPtr nodes )
 
             if ( filter_.is_acceptable( key_str.c_str() ) )
             {
-                headlines_[ headlines_curr_ ].push_back( key_str );
+                headlines_[ headlines_curr_ ].push_back( url_mnemonic_ + key_str );
             }
 
             xmlFree( key );

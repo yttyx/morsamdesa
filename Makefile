@@ -6,7 +6,6 @@ CC			:= g++
 
 #The Target Binary Program
 TARGET		:= morsamdesa
-SRCZIP		:= $(TARGET).zip
 
 SRCDIR		:= src
 INCDIR		:= src
@@ -26,6 +25,8 @@ LIB		:= -L/usr/local/lib -lpulse-simple -lpulse -lcurl -lconfig++ -lmp3lame -L/u
 SOURCES	 := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS	 := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
 
+.DEFAULT_GOAL := $(TARGET)
+
 # Make the directories
 directories:
 	@mkdir -p $(TARGETDIR)
@@ -40,7 +41,6 @@ clean:
 $(TARGET):	$(OBJECTS)
 	@echo [link]
 	$(CC) -o $(TARGETDIR)/$(TARGET) $^ $(LIB)
-	@rm $(SRCZIP)
 
 # Compile
 $(BUILDDIR)/%.$(OBJEXT):	$(SRCDIR)/%.$(SRCEXT)

@@ -134,7 +134,7 @@ C_message_send::handler( C_main_proc * p )
     
     p->send_in_progress_ = true;
 
-    log_writeln_fmt( C_log::LL_INFO, ">> %s", p->text_to_morse_.get_message() );
+    log_writeln_fmt( C_log::LL_INFO, "%s", p->text_to_morse_.get_message().c_str() );
 
     change_state_to( p, C_message_send_wait::s.instance(), "C_message_send_wait" );
 }

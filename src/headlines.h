@@ -46,6 +46,9 @@ public:
         ftRSS,
         ftAtom
     };
+    
+    const int   MNEMONIC_LENGTH = 5;    // '[' + 3 character mnemonic + ']'
+
 
     C_headlines( const string & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max );
     virtual ~C_headlines();
@@ -99,6 +102,8 @@ protected:
     unsigned int        headlines_curr_;
 
     string              url_;                                   // URL of headline feed
+    string              url_mnemonic_;                          // Three character identifier for URL e.g. BBC
+
     vector <string>     filter_strings_;
     unsigned int        poll_delay_min_;                        // Minimum time between polls (seconds)
     unsigned int        poll_delay_max_;                        // Maximum time between polls (seconds)

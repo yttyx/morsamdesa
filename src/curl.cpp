@@ -74,7 +74,7 @@ C_curl::set_callback(C_curl_callback *cb)
 void
 C_curl::get_data()
 {
-    assert ( url_.length() > 0 );
+    assert( url_.length() > 0 );
 
     // Initialise the curl session
     curl_handle_ = curl_easy_init();

@@ -81,7 +81,7 @@ static S_option options[] =
     { OPT_OUTPUT_FILE,                          Setting::TypeString,  offsetof( S_config, output_file ),                         "output.file",                            "1",   "256"    },
     { OPT_REMOTE_ENABLED,                       Setting::TypeBoolean, offsetof( S_config, remote_enabled ),                      "remote.enabled",                         "",    ""       },
     { OPT_FEED_HEADLINES_ENABLED,               Setting::TypeBoolean, offsetof( S_config, feed_headlines_enabled ),              "feed.headlines.enabled",                 "",    ""       },
-    { OPT_FEED_HEADLINES_URLS,                  Setting::TypeArray,   offsetof( S_config, feed_headlines_urls ),                 "feed.headlines.urls",                    "0",   "256"    },
+    { OPT_FEED_HEADLINES_URLS,                  Setting::TypeArray,   offsetof( S_config, feed_headlines_urls ),                 "feed.headlines.urls",                    "5",   "256"    },
     { OPT_FEED_HEADLINES_DELAY_MIN,             Setting::TypeInt,     offsetof( S_config, feed_headlines_delay_min ),            "feed.headlines.delay.min",               "60",  "600"    },
     { OPT_FEED_HEADLINES_DELAY_MAX,             Setting::TypeInt,     offsetof( S_config, feed_headlines_delay_max ),            "feed.headlines.delay.max",               "60",  "600"    },
     { OPT_FEED_HEADLINES_FILTERS,               Setting::TypeArray,   offsetof( S_config, feed_headlines_filters ),              "feed.headlines.filters",                 "0",   "20"     },
