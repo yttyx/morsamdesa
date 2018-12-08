@@ -28,7 +28,7 @@ morsamdesa is a program, written to run on a Raspberry Pi, that periodically ret
 
 ## Configuration
 
-![Sample configuration file](morsamdesa.conf).
+[Sample configuration file](morsamdesa.conf).
 
 ## Installation
 
@@ -95,7 +95,7 @@ Use `alsamixer` to set the master volume
 
 ## Build photos
 
-Located ![here](https://imgur.com/a/c2PNVbd).
+Located [here](https://imgur.com/a/c2PNVbd).
 
 
 
