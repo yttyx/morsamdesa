@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -54,8 +54,6 @@ C_audio_output_mp3::C_audio_output_mp3()
 
 C_audio_output_mp3::~C_audio_output_mp3()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_audio_output_mp3 destructor" );
-
     if ( lame_ )
     {
         lame_close( lame_ );
@@ -66,15 +64,8 @@ C_audio_output_mp3::~C_audio_output_mp3()
         fclose( file_ );
     }
 
-    if ( mp3_input_buffer_ != NULL )
-    {
-        delete [] mp3_input_buffer_;
-    }
-    
-    if ( mp3_output_buffer_ != NULL )
-    {
-        delete [] mp3_output_buffer_;
-    }
+    delete [] mp3_input_buffer_;
+    delete [] mp3_output_buffer_;
 }
 
 bool
@@ -86,7 +77,11 @@ C_audio_output_mp3::initialise()
 
     if ( file_ == NULL )
     {
-        log_writeln_fmt( C_log::LL_ERROR, "**Error %d creating file '%s'", errno, cfg.c().output_file.c_str() );
+        log_writeln_fmt( C_log::LL_ERROR, "**Error %d creating file %s", errno, cfg.c().output_file.c_str() );
+    }
+    else
+    {
+        log_writeln_fmt( C_log::LL_INFO, "Writing to %s", cfg.c().output_file.c_str() );
     }
 
     worked = worked && file_;

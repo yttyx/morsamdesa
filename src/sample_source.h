@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@
 #ifndef C_sample_source_H
 #define C_sample_source_H
 
+#include <memory>
+
 #include "audio_output.h"
 #include "config.h"
-#include "tone_type.h"
-
 
 namespace morsamdesa
 {
@@ -32,22 +32,28 @@ class C_sample_source
 
 public:
 
-    C_sample_source();
+    C_sample_source( float level );
     virtual ~C_sample_source();
 
     virtual bool
-    initialise(  C_audio_output * output ) { return false; }
+    initialise( shared_ptr< C_audio_output > output ) { return false; }
 
     virtual bool
-    initialise( eToneType tone_type, C_audio_output * output ) { return false; }
+    initialise( unsigned int samples, shared_ptr< C_audio_output >, int frequency_shift ) { return false; }
 
     virtual bool
-    initialise( unsigned int samples, C_audio_output * output ) { return false; }
+    initialise( unsigned int samples, shared_ptr< C_audio_output > ) { return false; }
 
     virtual void
     write( bool & samples_exhausted ) {}
 
-    C_audio_output *
+    void
+    dump( const char * desc );
+
+    void
+    write_to_disk( const char *filename );
+
+    shared_ptr< C_audio_output >
     output() { return output_; }
 
     virtual void
@@ -63,11 +69,13 @@ protected:
 
     bool         active_;       // Currently supplying samples
     
+    float        level_;
+
     short int    *buffer_;      // Sample buffer
     unsigned int samples_;      // Number of samples in buffer_
     unsigned int sample_curr_;  // Current sample
 
-    C_audio_output  *output_;
+    shared_ptr< C_audio_output > output_;
 };
 
 }

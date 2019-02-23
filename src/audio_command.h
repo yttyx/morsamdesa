@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,7 +17,9 @@
 #ifndef audio_command_H
 #define audio_command_H
 
-#include "tone.h"
+#include <memory>
+
+#include "audio_morse_cw.h"
 
 namespace morsamdesa
 {
@@ -29,7 +31,8 @@ enum eCommandTone
     ctUnmute,
     ctInterrupt,
     ctNext,
-    ctPrevious
+    ctPrevious,
+    ctPrefix
 };
 
 
@@ -37,39 +40,33 @@ class C_audio_command
 {
 public:
 
-    C_audio_command();
+    C_audio_command( const S_transmitter & transmitter );
     ~C_audio_command();
 
     void
     trigger( eCommandTone tone );
 
     bool
-    active();
+    busy();
 
     bool
-    initialise( C_audio_output * output );
-
-    bool
-    busy() { return sending_; }
+    initialise( shared_ptr< C_audio_output > output );
 
     void
     write();
 
-protected:
-
-    void
-    reset();
-
 private:
 
-    bool            sending_;
+    bool    sending_;
 
-    C_tone          mute_;
-    C_tone          unmute_;
-    C_tone          interrupt_;
-    C_tone          next_;
-    C_tone          previous_;
-    C_sample_source *sample_source_;
+    shared_ptr< C_audio_morse_cw > mute_;
+    shared_ptr< C_audio_morse_cw > unmute_;
+    shared_ptr< C_audio_morse_cw > interrupt_;
+    shared_ptr< C_audio_morse_cw > next_;
+    shared_ptr< C_audio_morse_cw > previous_;
+    shared_ptr< C_audio_morse_cw > prefix_;
+
+    shared_ptr< C_audio_morse_cw > sample_source_;
 };
 
 }

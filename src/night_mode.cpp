@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,6 +38,10 @@ C_night_mode::C_night_mode()
     night_mode_active_ = false;
     start_time_        = 0;
     end_time_          = 0;
+}
+
+C_night_mode::~C_night_mode()
+{
 }
 
 void

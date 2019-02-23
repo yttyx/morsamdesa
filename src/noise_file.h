@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 
 #ifndef C_noise_file_H
 #define C_noise_file_H
+
+#include <memory>
 
 #include "sound_file.h"
 
@@ -40,7 +42,7 @@ public:
     ~C_noise_file();
 
     bool
-    initialise( C_audio_output * output );
+    initialise( shared_ptr< C_audio_output > output );
 
     void
     write();

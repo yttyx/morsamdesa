@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,10 +19,6 @@
 
 #include "audio_output.h"
 #include "audio_morse.h"
-#include "silence.h"
-#include "sound_file.h"
-#include "text_to_morse.h"
-#include "tone.h"
 
 
 namespace morsamdesa
@@ -32,19 +28,20 @@ class C_audio_morse_cw : public C_audio_morse
 {
 public:
 
-    C_audio_morse_cw( C_text_to_morse & text_to_morse );
+    C_audio_morse_cw( const S_transmitter & transmitter, int frequency_shift );
+    C_audio_morse_cw( const S_transmitter & transmitter, string fixed_message, int frequency_shift );
     virtual ~C_audio_morse_cw();
 
     virtual bool
-    initialise( C_audio_output * output );
+    initialise( shared_ptr< C_audio_output > output );
+
+    virtual void
+    start_sending();
 
 protected:
 
+    int frequency_shift_;           // Number of semitones to shift the fundamental frequency
 
-private:
-
-    C_audio_morse_cw();
-    
 };
 
 }

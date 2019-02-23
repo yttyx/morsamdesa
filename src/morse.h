@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ class C_morse
 {
 public:
 
-    C_morse( C_text_to_morse & text_to_morse );
+    C_morse();
     virtual ~C_morse();
 
     virtual bool
@@ -40,7 +40,16 @@ public:
     stop() { abort_ = true; }
 
     virtual void
-    start_sending() { sending_ = true; }
+    reset() {}
+
+    virtual void
+    start_sending( string & message, eProsign prosign );
+
+    virtual void
+    start_sending() {}
+
+    virtual void
+    resume_sending();
 
     virtual void
     muted( bool muted ) { muted_ = muted; }
@@ -51,14 +60,19 @@ public:
     virtual void
     interrupt() { interrupt_ = true; }
 
+    S_morse_element_state &
+    get_send_state();
+
+    void
+    set_send_state( S_morse_element_state & state );
+
+    string
+    message() { return text_to_morse_->get_message();  }
+
 protected:
 
     const char *
     to_string( eMorseElement element );
-
-private:
-
-    C_morse();
 
 protected:
 
@@ -66,11 +80,9 @@ protected:
     bool            interrupt_;
     bool            abort_;
     bool            muted_;
+    string          fixed_message_;
 
-    C_text_to_morse & text_to_morse_;
-
-    eMorseElement   element_curr_;
-
+    unique_ptr< C_text_to_morse >  text_to_morse_;
 };
 
 }

@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ public:
 protected:
 
     void
-    change_state_to( C_main_proc * main_proc, C_main_state * main_state, const char * description );
+    change_state_to( C_main_proc * main_proc, shared_ptr< C_main_state > main_state, const char * description );
 
 };
 

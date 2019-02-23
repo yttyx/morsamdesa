@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,16 +33,16 @@ namespace morsamdesa
 extern C_log log;
 
 
-C_headlines::C_headlines( const string & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max )
+C_headlines::C_headlines( const S_url & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max )
     : filter_strings_( filters ),
       poll_delay_min_( period_min ),
       poll_delay_max_( period_max )
 {
-    assert( url.length() > 0 );
+    assert( url.url.length() > 0 );
     assert( poll_delay_max_ > poll_delay_min_ );
 
-    url_          = url.substr( MNEMONIC_LENGTH );
-    url_mnemonic_ = url.substr( 0, MNEMONIC_LENGTH );
+    url_      = url.url;
+    mnemonic_ = url.mnemonic;
 
     headlines_curr_ = 0;
     curl_           = new C_curl( url_ );
@@ -52,10 +52,7 @@ C_headlines::C_headlines( const string & url, const vector <string> & filters, u
 
 C_headlines::~C_headlines()
 {
-    if ( curl_ )
-    {
-        delete curl_;
-    }
+    delete curl_;
 }
 
 // -----------------------------------------------------------------------------------
@@ -80,13 +77,11 @@ C_headlines::stop()
 bool
 C_headlines::add_filters( const vector< string > & filters )
 {
-    bool worked = filter_.add_filters( filters );
-
-    return worked;
+    return filter_.add_filters( filters );
 }
 
 void
-C_headlines::get_headlines( vector< string > & headlines )
+C_headlines::get_headlines( vector< C_data_feed_entry > & headlines )
 {
     hlock_.lock();
 
@@ -194,11 +189,11 @@ C_headlines::extract_headlines( const char *xml, size_t xml_len, eFeedType feed_
     }
     catch ( exception & ex )
     {
-        log_writeln_fmt( C_log::LL_ERROR, "Exception parsing headlines XML [%s]: %s", url_mnemonic_.c_str(), ex.what() );
+        log_writeln_fmt( C_log::LL_ERROR, "Exception parsing headlines XML [%s]: %s", mnemonic_.c_str(), ex.what() );
     }
     catch ( ... )
     {
-        log_writeln_fmt( C_log::LL_ERROR, "Exception parsing headlines XML [%s]", url_mnemonic_.c_str() );
+        log_writeln_fmt( C_log::LL_ERROR, "Exception parsing headlines XML [%s]", mnemonic_.c_str() );
     }
 
     if ( xpathObjectPtr )
@@ -207,7 +202,7 @@ C_headlines::extract_headlines( const char *xml, size_t xml_len, eFeedType feed_
     }
     else
     {
-        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: xpath request failed.", url_mnemonic_.c_str() );
+        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: xpath request failed.", mnemonic_.c_str() );
     }
     if ( xpathContextPtr )
     {
@@ -215,7 +210,7 @@ C_headlines::extract_headlines( const char *xml, size_t xml_len, eFeedType feed_
     }
     else
     {
-        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: Failed to create xpathContextPtr.", url_mnemonic_.c_str() );
+        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: Failed to create xpathContextPtr.", mnemonic_.c_str() );
     }
     if ( doc )
     {
@@ -223,7 +218,7 @@ C_headlines::extract_headlines( const char *xml, size_t xml_len, eFeedType feed_
     }
     else
     {
-        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: XML parsing failed.", url_mnemonic_.c_str() );
+        log_writeln_fmt( C_log::LL_ERROR, "C_headlines::extract_headlines() [%s]: XML parsing failed.", mnemonic_.c_str() );
     }
 
     xmlCleanupParser();
@@ -257,7 +252,7 @@ C_headlines::add_headlines( xmlDocPtr doc, xmlNodeSetPtr nodes )
 
             if ( filter_.is_acceptable( key_str.c_str() ) )
             {
-                headlines_[ headlines_curr_ ].push_back( url_mnemonic_ + key_str );
+                headlines_[ headlines_curr_ ].push_back( C_data_feed_entry( mnemonic_, key_str ) );
             }
 
             xmlFree( key );

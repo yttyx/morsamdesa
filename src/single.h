@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,11 +28,11 @@ public:
     C_single();
     ~C_single();
 
-    static base *instance()
+    static shared_ptr< base > instance()    
     {
-        if ( instance_ == NULL )
+        if ( instance_.get() == NULL )
         {
-            instance_ = new derived();
+            instance_.reset( new derived() );
         }
 
         return instance_;
@@ -44,12 +44,12 @@ protected:
 
 public:
 
-    static base *instance_;
+    static shared_ptr< base > instance_;
 
 };
 
 template< class derived, class base >
-base * C_single< derived, base >::instance_ = NULL;
+shared_ptr< base > C_single< derived, base >::instance_ = NULL;
 
 }
 

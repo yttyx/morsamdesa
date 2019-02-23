@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
+#include "config.h"
 #include "curl.h"
 #include "datafeed.h"
 #include "filter.h"
@@ -47,10 +48,7 @@ public:
         ftAtom
     };
     
-    const int   MNEMONIC_LENGTH = 5;    // '[' + 3 character mnemonic + ']'
-
-
-    C_headlines( const string & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max );
+    C_headlines( const S_url & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max );
     virtual ~C_headlines();
 
     virtual bool
@@ -58,9 +56,6 @@ public:
 
     virtual void
     stop();
-
-    virtual bool
-    read( string & str ){ return false; }
 
     virtual bool
     data_ready(){ return false; }
@@ -72,7 +67,7 @@ public:
     add_filters( const vector< string > & filters );
 
     void
-    get_headlines( vector< string > & headlines  );
+    get_headlines( vector< C_data_feed_entry > & headlines  );
 
 protected:
 
@@ -98,13 +93,13 @@ private:
 
 protected:
 
-    vector< string >    headlines_[ 2 ];
-    unsigned int        headlines_curr_;
+    vector< C_data_feed_entry >   headlines_[ 2 ];
+    unsigned int                  headlines_curr_;
 
     string              url_;                                   // URL of headline feed
-    string              url_mnemonic_;                          // Three character identifier for URL e.g. BBC
+    string              mnemonic_;                              // Three character identifier for URL e.g. BBC
 
-    vector <string>     filter_strings_;
+    vector < string >   filter_strings_;
     unsigned int        poll_delay_min_;                        // Minimum time between polls (seconds)
     unsigned int        poll_delay_max_;                        // Maximum time between polls (seconds)
 

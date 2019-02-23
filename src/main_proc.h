@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,27 +17,33 @@
 #ifndef main_proc_H
 #define main_proc_H
 
+#include <memory>
+
 #include "audio_command.h"
 #include "audio_morse_cw.h"
+#include "audio_morse_double_plate_sounder.h"
 #include "audio_morse_sounder.h"
 #include "audio_output.h"
 #include "command.h"
 #include "command_state.h"
+#include "datafeed.h"
 #include "led_morse.h"
 #include "message_queue.h"
 #include "main_state.h"
 #include "night_mode.h"
 #include "noise_file.h"
+#include "silence.h"
 #include "sound_file.h"
 #include "thread.h"
 #include "timer.h"
+#include "transmitter.h"
 
 using namespace std;
 
 namespace morsamdesa
 {
 
-#define LED_MORSE_ACTIVE ( cfg.c().morse_led_enabled && p->muted_ )
+#define LED_MORSE_ACTIVE ( cfg.c().output_led && p->muted_ )
 
 const long FOLLOW_ON_TIME    = 1500;    // mS
 const long INTERMESSAGE_TIME = 3000;    // mS
@@ -79,7 +85,9 @@ class C_main_proc : public C_thread
     friend class C_next_message_wait;
     friend class C_interrupt_message;
     friend class C_interrupt_message_wait;
-
+    friend class C_toggle_prefix;
+    friend class C_toggle_prefix_wait;
+         
 public:
 
     C_main_proc();
@@ -95,10 +103,7 @@ public:
     stop();
 
     void
-    queue_message( string & message, bool discard );
-
-    bool
-    message_queue_full();
+    queue_message( C_data_feed_entry & feed_item );
 
     void
     wait_all_sent();
@@ -110,10 +115,10 @@ private:
 
     // Worker thread
     void
-    change_state_to( C_main_state * state );
+    change_state_to( shared_ptr< C_main_state > state  );
 
     void
-    change_state_to( C_command_state * state );
+    change_state_to( shared_ptr< C_command_state > state );
 
     void
     thread_handler();
@@ -121,28 +126,28 @@ private:
     bool
     message_waiting();
 
-    string
+    C_data_feed_entry
     read_message();
 
     void
-    mark_message_read( string & msg );
+    mark_message_read( C_data_feed_entry & feed_entry );
 
 private:
 
-    C_main_state       *main_state_;
-    C_command_state    *command_state_;
+    shared_ptr< C_main_state >     main_state_;
+    shared_ptr< C_command_state >  command_state_;
+    shared_ptr< C_audio_output >   audio_output_;
 
-    C_message_queue    *message_queue_;
-    string              message_;
+    unique_ptr< C_transmitter >    transmitter_;
+    unique_ptr< C_morse >          led_morse_;
+    unique_ptr< C_noise_file >     background_noise_;
 
-    C_morse             *led_morse_;
-    C_audio_morse       *audio_morse_;
-    C_noise_file        *background_noise_;
+    unique_ptr< C_audio_command >  command_sounds_;
+
+    C_message_queue     message_queue_;
+    C_data_feed_entry   feed_item_;
+
     C_silence           intermessage_;
-    C_audio_command     command_sounds_;
-
-    C_audio_output      *audio_output_;
-    C_text_to_morse     text_to_morse_;
 
     C_timer             follow_on_timer_;
     C_night_mode        night_mode_;
@@ -152,6 +157,7 @@ private:
     bool                follow_on_;
     bool                interrupt_;
     bool                muted_;
+    bool                prefix_;
     bool                mute_request_;
     bool                mute_in_progress_;
     bool                send_in_progress_;

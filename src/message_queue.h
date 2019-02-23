@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,20 +20,15 @@
 #include <deque>
 #include <string>
 
+#include "datafeed.h"
 #include "mutex.h"
+#include "timer.h"
 
 
 using namespace std;
 
 namespace morsamdesa
 {
-
-enum eMessageOption
-{
-    moNone,
-    moDiscard,
-    moDoNotHold
-};
 
 enum eMessageStatus
 {
@@ -52,52 +47,51 @@ public:
 
 public:
 
-    string         message;
-    eMessageStatus status;
-    eMessageOption option;
+    C_data_feed_entry   feed_item;
+    eMessageStatus      status;
 };
 
 class C_message_queue
 {
 public:
 
-    C_message_queue( unsigned int max_entries, unsigned int max_unheld, unsigned int max_discardable );
+    C_message_queue();
     ~C_message_queue() {}
 
     void
-    add( const string & msg, bool discard );
+    initialise( unsigned int max_unheld );
 
-    bool
-    full();
+    void
+    add( C_data_feed_entry & feed_item );
 
     bool
     empty();
 
     bool
-    get_next_unplayed( string & msg );
+    get_next_unplayed( C_data_feed_entry & feed_item );
 
     bool
-    get_next_held( string & msg );
+    get_next_held( C_data_feed_entry & feed_item );
 
     bool
     got_unplayed_message();
 
     void
-    mark_as_played( const string & msg );
+    mark_as_played( const C_data_feed_entry & feed_item );
 
     void
-    get_most_recent( string & msg );
+    get_most_recent( C_data_feed_entry & feed_item );
 
     void
     discard_all_messages();
 
     void
-    display_queue();
+    display_queue( const char * action );
 
 private:
 
     bool
-    get_next( string & msg, eMessageStatus status );
+    get_next( C_data_feed_entry & feed_item, eMessageStatus status );
 
     bool
     find( const string & msg, unsigned int & index );
@@ -106,7 +100,13 @@ private:
     remove_old_messages();
 
     void
-    remove_messages( unsigned int retained_messages );
+    remove_messages( bool all );
+
+    bool
+    message_too_old( const C_message_entry & message_entry );
+
+    void
+    set_queue_mode();
 
     const char *
     to_string( eMessageStatus status_e );
@@ -115,14 +115,14 @@ private:
 
     deque< C_message_entry > queue_;
 
-    string                 most_recent_message_;
-
+    C_data_feed_entry      most_recent_item_;
     C_mutex                qlock_;
+
+    timespec               last_add_time_;
 
     unsigned int           entries_max_;
     unsigned int           unheld_max_;
-    unsigned int           discardable_max_;
-    unsigned int           discardable_curr_;
+    bool                   add_to_front_of_queue_;
 };
 
 }

@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,8 +32,8 @@ extern C_config  cfg;
 extern C_log     log;
 
 
-C_audio_morse_sounder::C_audio_morse_sounder( C_text_to_morse & text_to_morse )
-    : C_audio_morse( text_to_morse )
+C_audio_morse_sounder::C_audio_morse_sounder( const S_transmitter & transmitter )
+    : C_audio_morse( transmitter )
 {
     sending_      = false;
     interrupt_    = false;
@@ -42,25 +42,37 @@ C_audio_morse_sounder::C_audio_morse_sounder( C_text_to_morse & text_to_morse )
 
 C_audio_morse_sounder::~C_audio_morse_sounder()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_audio_morse_sounder destructor" );
 }
 
 bool
-C_audio_morse_sounder::initialise( C_audio_output * output )
+C_audio_morse_sounder::initialise( shared_ptr< C_audio_output > output )
 {
-    dit_          = new C_sounder( cfg.c().morse_sounder_arm_down, cfg.d().dit_samples );
-    dah_          = new C_sounder( cfg.c().morse_sounder_arm_down, cfg.d().dah_samples );
-    interelement_ = new C_sounder( cfg.c().morse_sounder_arm_up,   cfg.d().interelement_samples );
-    interletter_  = new C_sounder( cfg.c().morse_sounder_arm_up,   cfg.d().interletter_samples );
-    interword_    = new C_sounder( cfg.c().morse_sounder_arm_up,   cfg.d().interword_samples );
+    C_audio_morse::initialise();
+
+    dot_.reset( new C_sounder( "dot_", transmitter_.sounder_arm_down, morse_timing_->samples_dot(), transmitter_.level ) );
+    dash_.reset( new C_sounder( "dash_", transmitter_.sounder_arm_down, morse_timing_->samples_dash(), transmitter_.level ) );
+    dash_2_.reset( new C_sounder( "dash_2", transmitter_.sounder_arm_down, morse_timing_->samples_dash_2(), transmitter_.level ) );
+    dash_3_.reset( new C_sounder( "dash_3", transmitter_.sounder_arm_down, morse_timing_->samples_dash_3(), transmitter_.level ) );
+    interelement_.reset( new C_sounder( "interelement_", transmitter_.sounder_arm_up, morse_timing_->samples_interelement(), transmitter_.level ) );
+    interelement_2_.reset( new C_sounder( "interelement_2", transmitter_.sounder_arm_up, morse_timing_->samples_interelement_2(), transmitter_.level ) );
+    interletter_.reset( new C_sounder( "interletter_", transmitter_.sounder_arm_up, morse_timing_->samples_interletter(), transmitter_.level ) );
+    interword_.reset( new C_sounder( "interword_", transmitter_.sounder_arm_up, morse_timing_->samples_interword(), transmitter_.level ) );
 
     bool worked = true;
 
-    worked = worked && dit_->initialise( output );
-    worked = worked && dah_->initialise( output );
+    worked = worked && dot_->initialise( output );
+    worked = worked && dash_->initialise( output );
+    worked = worked && dash_2_->initialise( output );
+    worked = worked && dash_3_->initialise( output );
     worked = worked && interelement_->initialise( output );
+    worked = worked && interelement_2_->initialise( output );
     worked = worked && interletter_->initialise( output );
     worked = worked && interword_->initialise( output );
+
+    if ( ! worked )
+    {
+        log_writeln( C_log::LL_ERROR, "C_audio_morse_sounder initialisation error" );
+    }
 
     return worked;
 }

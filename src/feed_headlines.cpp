@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ namespace morsamdesa
 extern C_log log;
 
 
-C_feed_headlines::C_feed_headlines( const string & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max )
+C_feed_headlines::C_feed_headlines( const S_url & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max )
     : C_headlines( url, filters, period_min, period_max )
 {
 }
@@ -77,7 +77,7 @@ C_feed_headlines::data_ready()
 }
 
 bool
-C_feed_headlines::read( string & str )
+C_feed_headlines::read( C_data_feed_entry & feed_item )
 {
     bool got_data = false;
 
@@ -87,7 +87,7 @@ C_feed_headlines::read( string & str )
 
     if ( got_data )
     {
-        str = feed_.front();
+        feed_item = feed_.front();
         feed_.pop();
     }
 
@@ -109,8 +109,7 @@ C_feed_headlines::process_headlines()
 
     if ( headlines_[ headlines_prev ].size()  == 0 )
     {
-        // First headlines read. Use up to the first 16 entries as the feed.
-        unsigned int entries = min( ( int ) headlines_[ headlines_curr_ ].size(), 16 );
+        unsigned int entries = headlines_[ headlines_curr_ ].size();
 
         for ( unsigned int ii = 0; ii < entries; ii++ )
         {
@@ -130,7 +129,7 @@ C_feed_headlines::process_headlines()
 
             for ( unsigned int headline_prev_idx = 0; headline_prev_idx < headlines_[ headlines_prev ].size(); headline_prev_idx++ )
             {
-                if ( headlines_[ headlines_curr_ ][ headline_curr_idx ] == headlines_[ headlines_prev ][ headline_prev_idx ] )
+                if ( headlines_[ headlines_curr_ ][ headline_curr_idx ].data == headlines_[ headlines_prev ][ headline_prev_idx ].data )
                 {
                     found = true;
                     break;
@@ -147,6 +146,8 @@ C_feed_headlines::process_headlines()
     }
 
     hlock_.unlock();
+
+    log_writeln_fmt( C_log::LL_INFO, "Got headlines from %s", mnemonic_.c_str() );
 }
 
 }

@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 #include <stdlib.h>
 
 #include "audio_morse_cw.h"
+#include "cw.h"
+#include "silence.h"
 #include "log.h"
 
 using namespace  morsamdesa;
@@ -30,37 +32,61 @@ namespace morsamdesa
 extern C_config  cfg;
 extern C_log     log;
 
-
-C_audio_morse_cw::C_audio_morse_cw( C_text_to_morse & text_to_morse )
-    : C_audio_morse( text_to_morse )
+C_audio_morse_cw::C_audio_morse_cw( const S_transmitter & transmitter, int frequency_shift )
+    : C_audio_morse( transmitter )
 {
+    frequency_shift_ = frequency_shift;
+}
+
+C_audio_morse_cw::C_audio_morse_cw( const S_transmitter & transmitter, string fixed_message, int frequency_shift )
+    : C_audio_morse( transmitter )
+{
+    fixed_message_   = fixed_message;
+    frequency_shift_ = frequency_shift;
 }
 
 C_audio_morse_cw::~C_audio_morse_cw()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_audio_morse_cw destructor" );
 }
 
 bool
-C_audio_morse_cw::initialise( C_audio_output * output )
+C_audio_morse_cw::initialise( shared_ptr< C_audio_output > output )
 {
-    dit_            = new C_tone();
-    dah_            = new C_tone();
-    interelement_   = new C_silence();
-    interletter_    = new C_silence();
-    interword_      = new C_silence();
+    C_audio_morse::initialise();
+
+    dot_.reset( new C_cw( transmitter_ ) );
+    dash_.reset( new C_cw( transmitter_ ) );
+    dash_2_.reset( new C_cw( transmitter_ ) );
+    dash_3_.reset( new C_cw( transmitter_ ) );
+
+    interelement_.reset( new C_silence() );
+    interelement_2_.reset( new C_silence() );
+    interletter_.reset( new C_silence() );
+    interword_.reset( new C_silence() );
 
     bool worked = true;
 
-    worked = worked && dit_->initialise( ttDit, output );
-    worked = worked && dah_->initialise( ttDah, output );
+    worked = worked && dot_->initialise( morse_timing_->samples_dot(), output, frequency_shift_ );
+    worked = worked && dash_->initialise( morse_timing_->samples_dash(), output, frequency_shift_ );
+    worked = worked && dash_2_->initialise( morse_timing_->samples_dash_2(), output, frequency_shift_ );
+    worked = worked && dash_3_->initialise( morse_timing_->samples_dash_3(), output, frequency_shift_ );
+    worked = worked && interelement_->initialise( morse_timing_->samples_interelement(), output );
+    worked = worked && interelement_2_->initialise( morse_timing_->samples_interelement_2(), output );
+    worked = worked && interletter_->initialise( morse_timing_->samples_interletter(), output );
+    worked = worked && interword_->initialise( morse_timing_->samples_interword(), output );
 
-    worked = worked && interelement_->initialise( cfg.d().interelement_samples, output );
-    worked = worked && interletter_->initialise( cfg.d().interletter_samples,   output );
-    worked = worked && interword_->initialise( cfg.d().interword_samples,       output );
+    if ( ! worked )
+    {
+        log_writeln( C_log::LL_ERROR, "C_audio_morse_cw initialisation error" );
+    }
 
     return worked;
 }
 
+void
+C_audio_morse_cw::start_sending()
+{
+    C_morse::start_sending( fixed_message_, psNone );
+}
 
 }

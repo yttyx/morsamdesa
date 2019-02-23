@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,9 +36,9 @@ extern C_log log;
 // ------------------------------------------------------------------------------------------------
 
 void
-C_command_state::change_state_to( C_main_proc * morse, C_command_state * state, const char * description )
+C_command_state::change_state_to( C_main_proc * morse, shared_ptr< C_command_state > state, const char * description )
 {
-    log_writeln_fmt( C_log::LL_VERBOSE_2, "CMD  state: %s", description );
+    log_writeln_fmt( C_log::LL_VERBOSE_3, "CMD  state: %s", description );
 
     morse->change_state_to( state );
 }
@@ -46,7 +46,7 @@ C_command_state::change_state_to( C_main_proc * morse, C_command_state * state, 
 void
 C_command_state::handler( C_main_proc * p )
 {
-    log_writeln( C_log::LL_VERBOSE_2, "CMD  C_command_state::handler()" );
+    log_writeln( C_log::LL_VERBOSE_3, "CMD  C_command_state::handler()" );
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -72,6 +72,10 @@ C_wait_for_command::handler( C_main_proc * p )
         
         case cmdNext:
             change_state_to( p, C_next_message::s.instance(), "C_next_message" );
+            break;
+        
+        case cmdPrefix:
+            change_state_to( p, C_toggle_prefix::s.instance(), "C_toggle_prefix" );
             break;
         
         default:
@@ -163,17 +167,18 @@ C_toggle_mute::handler( C_main_proc * p )
     {
         p->muted_ = false;
         p->led_morse_->muted( false );
-        p->command_sounds_.trigger( ctUnmute );
+        p->command_sounds_->trigger( ctUnmute );
 
-        if ( cfg.c().morse_led_enabled && p->led_morse_->busy() )
+        if ( cfg.c().output_led && p->led_morse_->busy() )
         {
             p->led_morse_->interrupt();
-            p->audio_morse_->start_sending();
+            p->transmitter_->set_send_state( p->led_morse_->get_send_state() );
+            p->transmitter_->resume_sending();
         }
     }
     else
     {
-        p->command_sounds_.trigger( ctMute );
+        p->command_sounds_->trigger( ctMute );
         p->mute_in_progress_ = true;
     }
 
@@ -187,7 +192,7 @@ C_toggle_mute::handler( C_main_proc * p )
 void
 C_mute_unmute_wait::handler( C_main_proc * p )
 {
-    if ( ! p->command_sounds_.busy() )
+    if ( ! p->command_sounds_->busy() )
     {
         if ( ! p->muted_ && p->mute_in_progress_ )
         {
@@ -197,10 +202,11 @@ C_mute_unmute_wait::handler( C_main_proc * p )
 
             p->led_morse_->muted( true );
 
-            if ( cfg.c().morse_led_enabled && p->audio_morse_->busy() )
+            if ( cfg.c().output_led && p->transmitter_->busy() )
             {
-                p->audio_morse_->interrupt();
-                p->led_morse_->start_sending();
+                p->transmitter_->interrupt();
+                p->led_morse_->set_send_state( p->transmitter_->get_send_state() );
+                p->led_morse_->resume_sending();
             }
         }
 
@@ -215,7 +221,7 @@ C_mute_unmute_wait::handler( C_main_proc * p )
 void
 C_previous_message::handler( C_main_proc * p )
 {
-    p->command_sounds_.trigger( ctPrevious );
+    p->command_sounds_->trigger( ctPrevious );
 
     change_state_to( p, C_previous_message_wait::s.instance(), "C_previous_message_wait" );
 }
@@ -227,7 +233,7 @@ C_previous_message::handler( C_main_proc * p )
 void
 C_previous_message_wait::handler( C_main_proc * p )
 {
-    if ( ! p->command_sounds_.busy() )
+    if ( ! p->command_sounds_->busy() )
     {
         p->play_last_message_ = true;
 
@@ -247,7 +253,7 @@ C_previous_message_wait::handler( C_main_proc * p )
 void
 C_next_message::handler( C_main_proc * p )
 {
-    p->command_sounds_.trigger( ctNext );
+    p->command_sounds_->trigger( ctNext );
 
     change_state_to( p, C_next_message_wait::s.instance(), "C_next_message_wait" );
 }
@@ -259,7 +265,7 @@ C_next_message::handler( C_main_proc * p )
 void
 C_next_message_wait::handler( C_main_proc * p )
 {
-    if ( ! p->command_sounds_.busy() )
+    if ( ! p->command_sounds_->busy() )
     {
         p->play_next_message_ = true;
 
@@ -279,7 +285,7 @@ C_next_message_wait::handler( C_main_proc * p )
 void
 C_interrupt_message::handler( C_main_proc * p )
 {
-    p->command_sounds_.trigger( ctInterrupt );
+    p->command_sounds_->trigger( ctInterrupt );
 
     change_state_to( p, C_interrupt_message_wait::s.instance(), "C_interrupt_message_wait" );
 }
@@ -291,12 +297,40 @@ C_interrupt_message::handler( C_main_proc * p )
 void
 C_interrupt_message_wait::handler( C_main_proc * p )
 {
-    if ( ! p->command_sounds_.busy() )
+    if ( ! p->command_sounds_->busy() )
     {
         if ( p->send_in_progress_ )
         {
             p->interrupt_ = true;
         }
+
+        change_state_to( p, C_wait_for_command::s.instance(), "C_wait_for_command" );
+    }
+}
+
+// ------------------------------------------------------------------------------------------------
+// C_toggle_prefix
+// ------------------------------------------------------------------------------------------------
+
+void
+C_toggle_prefix::handler( C_main_proc * p )
+{
+    p->command_sounds_->trigger( ctPrefix );
+
+    change_state_to( p, C_toggle_prefix_wait::s.instance(), "C_toggle_prefix_wait" );
+}
+
+// ------------------------------------------------------------------------------------------------
+// C_toggle_prefix_wait
+// ------------------------------------------------------------------------------------------------
+void
+C_toggle_prefix_wait::handler( C_main_proc * p )
+{
+    if ( ! p->command_sounds_->busy() )
+    {
+        p->prefix_ = ! p->prefix_;
+        
+        log_writeln_fmt( C_log::LL_INFO, "Prefix %s", p->prefix_ ? "on" : "off" );
 
         change_state_to( p, C_wait_for_command::s.instance(), "C_wait_for_command" );
     }

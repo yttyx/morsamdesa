@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 
 #ifndef command_state_H
 #define command_state_H
+
+#include <memory>
 
 #include "single.h"
 
@@ -39,7 +41,7 @@ public:
 protected:
 
     void
-    change_state_to( C_main_proc * main_proc, C_command_state * state, const char * description );
+    change_state_to( C_main_proc * main_proc, shared_ptr< C_command_state > state, const char * description );
 
 };
 
@@ -191,6 +193,32 @@ class C_interrupt_message_wait : public C_command_state
 public:
 
     static C_single< C_interrupt_message_wait, C_command_state > s;
+
+protected:
+
+    virtual void
+    handler( C_main_proc * p );
+
+};
+
+class C_toggle_prefix: public C_command_state
+{
+public:
+
+    static C_single< C_toggle_prefix, C_command_state > s;
+
+protected:
+
+    virtual void
+    handler( C_main_proc * p );
+
+};
+
+class C_toggle_prefix_wait: public C_command_state
+{
+public:
+
+    static C_single< C_toggle_prefix_wait, C_command_state > s;
 
 protected:
 

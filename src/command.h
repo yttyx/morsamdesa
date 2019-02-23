@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,27 +22,13 @@ namespace morsamdesa
 
 enum eCommand
 {
-    cmdNone,
-    cmd10plus,
-    cmdChanDown,
-    cmdEnter,
-    cmdMute,
-    cmdNext,
-    cmdPrevious,
-    cmdRpt,
-    cmdSetup,
-    cmdStop,
-    cmdTimer1,
-    cmdTimer2,
-    cmdTimer3,
-    cmdTimer4,
-    cmdTimer5,
-    cmdTimer6,
-    cmdTimer7,
-    cmdTimer8,
-    cmdTimer9,
-    cmdVolDown,
-    cmdVolUp
+    cmdNone
+,   cmdMute
+,   cmdNext
+,   cmdPrefix
+,   cmdPrevious
+,   cmdRpt
+,   cmdStop
 };
 
 }

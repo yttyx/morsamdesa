@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 
 #ifndef C_silence_H
 #define C_silence_H
+
+#include <memory>
 
 #include "sample_source.h"
 
@@ -38,7 +40,7 @@ public:
     write( bool & samples_exhausted );
 
     virtual bool
-    initialise( unsigned int samples, C_audio_output * output  );
+    initialise( unsigned int samples, shared_ptr< C_audio_output > output );
 
 };
 

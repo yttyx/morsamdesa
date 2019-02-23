@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "audio_morse_sparkgap.h"
 #include "audio_output_mp3.h"
 #include "audio_output_pulseaudio.h"
 #include "config.h"
@@ -40,15 +41,11 @@ C_main_proc::C_main_proc()
     main_state_         = C_wait_for_message::s.instance();
     command_state_      = C_wait_for_command::s.instance();
     command_            = cmdNone;
-    message_queue_      = NULL;
-    audio_morse_        = NULL;
-    led_morse_          = NULL;
-    background_noise_   = NULL;
-    audio_output_       = NULL;
 
     follow_on_          = false;
     interrupt_          = false;
     muted_              = false;
+    prefix_             = cfg.c().feed_headlines_prefix;
     mute_request_       = false;
     mute_in_progress_   = false;
     send_in_progress_   = false;
@@ -59,46 +56,16 @@ C_main_proc::C_main_proc()
 
 C_main_proc::~C_main_proc()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_main_proc destructor" );
-
-    if ( main_state_ )
-    {
-        delete main_state_;
-    }
-    if ( command_state_ )
-    {
-        delete command_state_;
-    }
-    if ( audio_morse_ )
-    {
-        delete audio_morse_;
-    }
-    if ( background_noise_ )
-    {
-        delete background_noise_;
-    }
-    if ( audio_output_ )
-    {
-        delete audio_output_;
-    }
-    if ( led_morse_ )
-    {
-        delete led_morse_;
-    }
-    if ( message_queue_ )
-    {
-        delete message_queue_;
-    }
 }
 
 void
-C_main_proc::change_state_to( C_main_state * state )
+C_main_proc::change_state_to( shared_ptr< C_main_state > state )
 {
     main_state_ = state;
 }
 
 void
-C_main_proc::change_state_to( C_command_state * state )
+C_main_proc::change_state_to( shared_ptr< C_command_state > state )
 {
     command_state_ = state;
 }
@@ -106,40 +73,32 @@ C_main_proc::change_state_to( C_command_state * state )
 bool
 C_main_proc::initialise()
 {
-    if ( cfg.d().output_mode == OMODE_PULSEAUDIO )
+    message_queue_.initialise( cfg.c().feed_queue_unheld );
+
+    if ( cfg.c().output_mode == OMODE_PULSEAUDIO )
     {
-        audio_output_ =  new C_audio_output_pulseaudio();
+        audio_output_.reset( new C_audio_output_pulseaudio() );
     }
     else
     {
-        audio_output_ =  new C_audio_output_mp3();
+        audio_output_.reset( new C_audio_output_mp3() );
     }
 
-    background_noise_ = new C_noise_file( cfg.c().morse_noise_bg_file, smLoop );
+    transmitter_.reset( new C_transmitter() );
 
-    if ( cfg.d().morse_mode == MM_SOUNDER )
-    {
-        audio_morse_ = new C_audio_morse_sounder( text_to_morse_ );
-    }
-    else
-    {
-        audio_morse_ = new C_audio_morse_cw( text_to_morse_ );
-    }
+    bool worked = transmitter_->initialise( cfg.c().transmitters, audio_output_ );
 
-    led_morse_ = cfg.c().morse_led_enabled ? new C_led_morse( text_to_morse_ ) : new C_morse( text_to_morse_ );
+    command_sounds_.reset( new C_audio_command( transmitter_->find( "CMD" ) ) );
+    led_morse_.reset( cfg.c().output_led ? new C_led_morse( transmitter_->find( "LED" ) ) : new C_morse() );
+    background_noise_.reset( new C_noise_file( cfg.c().noise_bg_file, smLoop ) );
 
-    message_queue_ = new C_message_queue( cfg.c().feed_queue_length, cfg.c().feed_queue_unheld, cfg.c().feed_queue_discardable );
-
-    bool worked = audio_output_->initialise();
-
-    worked = worked && audio_morse_->initialise( audio_output_ );
+    worked = worked && audio_output_->initialise();
     worked = worked && background_noise_->initialise( audio_output_ );
-    worked = worked && command_sounds_.initialise( audio_output_ );
+    worked = worked && command_sounds_->initialise( audio_output_ );
     worked = worked && intermessage_.initialise( cfg.d().intermessage_samples, audio_output_ );
-
     worked = worked && led_morse_->initialise();
 
-    night_mode_.initialise( cfg.c().morse_nightmode_start, cfg.c().morse_nightmode_end );
+    night_mode_.initialise( cfg.c().nightmode_start, cfg.c().nightmode_end );
 
     if ( worked )
     {
@@ -148,10 +107,9 @@ C_main_proc::initialise()
         led_morse_->muted( muted_ );
 
         log_writeln_fmt( C_log::LL_INFO, "Night mode %s", muted_ ? "on" : "off" );
+        log_writeln_fmt( C_log::LL_INFO, "LED output %s", cfg.c().output_led ? "enabled": "disabled" );
 
-        log_writeln_fmt( C_log::LL_INFO, "LED output %s", cfg.c().morse_led_enabled ? "enabled": "disabled" );
-
-        if ( cfg.c().morse_alphanumeric_only )
+        if ( cfg.c().transmitters[ 0 ].alphanumeric_only )
         {
             log_writeln( C_log::LL_INFO, "Alphanumeric characters only" );
         }
@@ -183,31 +141,27 @@ C_main_proc::command( eCommand cmd )
 }
 
 void
-C_main_proc::queue_message( string & message, bool discard )
+C_main_proc::queue_message( C_data_feed_entry & feed_item )
 {
-    message_queue_->add( message, discard );
-}
-
-bool
-C_main_proc::message_queue_full()
-{
-    return message_queue_->full();
+    message_queue_.add( feed_item );
 }
 
 void
 C_main_proc::wait_all_sent()
 {
-    // Wait until the queue being empty of unplayed message, and no message being sent,
-    // is true for two seconds.
     C_timer timer;
+
+    // Fixed delay of one second to allow enough time for a message be read from the queue and sent for transmission
+    delay( 1000 );
 
     log_writeln( C_log::LL_INFO, "Waiting for outstanding messages to be sent" );
 
     while ( true )
     {
-        if ( ( ! message_queue_->empty() ) || send_in_progress_ )
+        if ( send_in_progress_ )
         {
-            timer.start( cfg.c().morse_noise_bg_fade_time );
+			// Allow enough time for background noise to fade down, if configured
+            timer.start( 2000 + ( long ) ( ( cfg.c().noise_bg_fade_time > 0.0 ) ? ( 1000.0 * cfg.c().noise_bg_fade_time ) : 0.0 ) );
         }
 
         if ( timer.expired() )
@@ -215,10 +169,10 @@ C_main_proc::wait_all_sent()
             break;
         }
         
-        log_writeln( C_log::LL_INFO, "Waiting..." );
-
         delay( 100 );
     }
+
+    log_writeln( C_log::LL_INFO, "All sent" );
 }
 
 // -----------------------------------------------------------------------------------
@@ -231,9 +185,9 @@ C_main_proc::thread_handler()
     // This thread handles the main loop for:
     // - Audio output, supplying a constant steam of samples to Pulseaudio, whether or not any Morse/background noise information is present
     // - Main process flow for Morse message output
-    // - Response to remote control commands
+    // - Response to input commands
     //
-    // LED Morse output is initiated from the main state code, and implemented in the C_led_morse background thread
+    // LED Morse output is initiated from the main state code and implemented in the C_led_morse background thread
 
     while ( ! close_down_ )
     {
@@ -244,10 +198,10 @@ C_main_proc::thread_handler()
 
         // Fetch one tick's worth (20mS) of samples from each of the audio feeds and add them into the audio output.
 
-        audio_morse_->write();                      // Add to output buffer
+        transmitter_->write();                      // Add to output buffer
         background_noise_->write();                 //
         intermessage_.write();                      //
-        command_sounds_.write();                    //
+        command_sounds_->write();                   //
 
         if ( muted_ )                               // If muted, clear down the buffer we have just been adding to.
         {                                           // It's a rather wasteful approach, but it allows the sample feeds to
@@ -259,42 +213,42 @@ C_main_proc::thread_handler()
 
     audio_output_->send( true );                    // Make sure all audio output is flushed
     
-    message_queue_->discard_all_messages();
+    message_queue_.discard_all_messages();
 }
 
 bool
 C_main_proc::message_waiting()
 {
-    return play_last_message_ || play_next_message_ || message_queue_->got_unplayed_message();
+    return play_last_message_ || play_next_message_ || message_queue_.got_unplayed_message();
 }
 
-string
+C_data_feed_entry
 C_main_proc::read_message()
 {
-    string msg;
+    C_data_feed_entry feed_entry;
 
     if ( play_last_message_ )
     {
-        message_queue_->get_most_recent( msg );
+        message_queue_.get_most_recent( feed_entry );
         play_last_message_ = false;
     }
     else if ( play_next_message_ )
     {
-        message_queue_->get_next_held( msg );
+        message_queue_.get_next_held( feed_entry );
         play_next_message_ = false;
     }
     else
     {
-        message_queue_->get_next_unplayed( msg );
+        message_queue_.get_next_unplayed( feed_entry );
     }
 
-    return msg;
+    return feed_entry;
 }
 
 void
-C_main_proc::mark_message_read( string & msg )
+C_main_proc::mark_message_read( C_data_feed_entry & feed_entry )
 {
-    message_queue_->mark_as_played( msg );
+    message_queue_.mark_as_played( feed_entry );
 }
 
 }

@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ class C_feed_headlines : public C_headlines
 {
 public:
 
-    C_feed_headlines( const string & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max );
+    C_feed_headlines( const S_url & url, const vector <string> & filters, unsigned int period_min, unsigned int period_max );
     virtual ~C_feed_headlines();
 
     virtual bool
@@ -45,15 +45,16 @@ public:
     data_ready();
 
     virtual bool
-    read( string & str );
+    read( C_data_feed_entry & feed_item );
 
     virtual void
     process_headlines();
 
 private:
 
-    queue< string > feed_;
-    C_mutex         feed_lock_;
+    queue< C_data_feed_entry > feed_;
+
+    C_mutex feed_lock_;
 
 };
 

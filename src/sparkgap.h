@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -12,31 +12,30 @@
     GNU General Public License for more details.
 */
 
-// remote_stub.cpp
+// sparkgap.h
 
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#ifndef C_sparkgap_H
+#define C_sparkgap_H
 
-#include "log.h"
-#include "remote_stub.h"
+#include "sound_file.h"
 
-
-using namespace std;
-using namespace morsamdesa;
 
 namespace morsamdesa
 {
 
-extern C_log log;
-
-bool
-C_remote_stub::initialise()
+class C_sparkgap : public C_sound_file
 {
-    log_writeln( C_log::LL_INFO, "Remote control disabled" );
 
-    return true;
+public:
+
+    C_sparkgap( const char *description, const string & filename, unsigned int samples, float level );
+    ~C_sparkgap();
+
+    bool
+    initialise( shared_ptr< C_audio_output > output );
+
+};
+
 }
 
-}
+#endif // C_sparkgap_H

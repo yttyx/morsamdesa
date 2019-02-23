@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,8 +17,10 @@
 #ifndef led_morse_H
 #define led_morse_H
 
+#include <memory>
+#include "config.h"
 #include "morse.h"
-#include "text_to_morse.h"
+#include "morse_timing.h"
 #include "thread.h"
 #include "timer.h"
 
@@ -31,7 +33,7 @@ class C_led_morse : public C_morse, public C_thread
 
 public:
 
-    C_led_morse( C_text_to_morse & text_to_morse );
+    C_led_morse( const S_transmitter & transmitter );
     virtual ~C_led_morse();
 
     virtual bool
@@ -45,8 +47,6 @@ public:
 
 private:
 
-    C_led_morse();
-
     void
     thread_handler();
 
@@ -56,30 +56,13 @@ private:
     void
     led_off();
 
-    int
-    gpio_initialise();
-
-    void
-    gpio_set_mode( unsigned gpio, unsigned mode );
-
-    void
-    gpio_set_pullupdown( unsigned gpio, unsigned pud );
-
-    void
-    gpio_write( unsigned gpio, unsigned level );
-
-    unsigned int
-    gpio_hardware_revision();
-
 private:
 
-    volatile unsigned int *gpio_reg_;
+    C_timer         still_here_timer_;
+    S_transmitter   transmitter_;
+    eMorseElement   element_curr_;
 
-    unsigned int pi_model_;
-    unsigned int pi_revision_;
-
-    C_timer      still_here_timer_;
-
+    shared_ptr< C_morse_timing >  morse_timing_;
 };
 
 }

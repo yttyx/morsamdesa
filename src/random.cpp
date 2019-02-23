@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,18 +15,20 @@
 // random.cpp
 
 #include <assert.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
+#include "log.h"
 #include "random.h"
 
 using namespace  morsamdesa;
 
 namespace morsamdesa
 {
+
+extern C_log log;
 
 C_random::C_random( int max )
 {
@@ -38,10 +40,7 @@ C_random::C_random( int max )
 
 C_random::~C_random()
 {
-    if ( values_ )
-    {
-        delete [] values_;
-    }
+    delete [] values_;
 }
 
 void C_random::init()
@@ -50,17 +49,23 @@ void C_random::init()
     srand( time( NULL ) );
 }
 
+// Random value between 0 and ( max_ - 1 ), omitting any values which have been removed
 unsigned int
-C_random::random()
+C_random::next()
 {
-    // Random value between 0 and ( max_ - 1 )
-    return rand() % max_;
+    return next_internal( false );
 }
 
 // Return a random number in the range 0 - (max - 1) with the proviso that a given number should not be repeated
 // until all numbers in the range have been used up.
 unsigned int
-C_random::not_in_last_n()
+C_random::next_unique()
+{
+    return next_internal( true );
+}
+
+unsigned int
+C_random::next_internal( int unique )
 {
     if ( ! spare_slot() )
     {
@@ -74,10 +79,23 @@ C_random::not_in_last_n()
         
         if ( ! values_[ val ] )
         {
-            values_[ val ] = true;
-
+            if ( unique )
+            {
+                remove( val );
+            }
+            
             return ( unsigned int ) val;
         }
+    }
+}
+
+// Remove val from the list of available numbers
+void
+C_random::remove( int val )
+{
+    if ( ( val >= 0 ) && ( val <= ( max_ - 1 ) ) )
+    {
+        values_[ val ] = true;
     }
 }
 
@@ -102,6 +120,19 @@ C_random::spare_slot()
     }
 
     return false;
+}
+
+void
+C_random::display_available()
+{
+    string active;
+
+    for ( int ii = 0; ii < max_; ii++ )
+    {
+        active += values_[ ii ] ? " " : C_log::format_string( "%d", ii );
+    }
+
+    log_writeln_fmt( C_log::LL_INFO, "C_random, available values: %s", active.c_str() );
 }
 
 }

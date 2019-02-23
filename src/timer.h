@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@
 #ifndef timer_H
 #define timer_H
 
+#include "time.h"
+
+
 using namespace std;
 
 
@@ -27,11 +30,13 @@ class C_timer
 {
 public:
 
+    static const unsigned int DAY_SECS = 24 * 60 * 60;
+
     C_timer();
     ~C_timer() {}
 
     void
-    set( long milliseconds );
+    stop();
 
     void
     start( long milliseconds );
@@ -39,14 +44,25 @@ public:
     bool
     expired();
 
-    string
-    elapsed();
+    unsigned int
+    elapsed_ms();
 
-    bool active() { return active_; }
+    bool
+    active() { return active_; }
+
+    static timespec
+    current_time();
+
+    static unsigned int
+    elapsed_sec( const timespec & start_time );
+
+    static string
+    elapsed_str( const timespec & start_time );
+
 
 private:
 
-    void
+    static void
     diff( const timespec & start, const timespec & end, timespec & elapsed );
 
 private:
@@ -54,6 +70,7 @@ private:
     long            duration_;
     struct timespec start_time_;
     bool            active_;
+    bool            expired_;
 };
 
 }

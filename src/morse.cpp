@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -41,26 +41,55 @@ static element_type element_types[] =
     { "None",           meNone              },
     { "Dit",            meDit               },
     { "Dah",            meDah               },
+    { "Dah2",           meDah2              },
+    { "Dah3",           meDah3              },
     { "InterElement",   meInterElement      },
+    { "InterElement2",  meInterElement2     },
     { "InterCharacter", meInterCharacter    },
     { "InterWord",      meInterWord         },
-    { "InterMessage",   meEndOfMessage      },
+    { "EndOfMessage",   meEndOfMessage      },
     { NULL,             meInvalid           }
 };
 
-C_morse::C_morse(  C_text_to_morse & text_to_morse )
-    : text_to_morse_( text_to_morse )
+C_morse::C_morse()
 {
     sending_       = false;
     interrupt_     = false;
     abort_         = false;
-
-    element_curr_  = meNone;
 }
 
 C_morse::~C_morse()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_morse destructor" );
+}
+
+void
+C_morse::start_sending( string & message, eProsign prosign )
+{
+    sending_ = false;
+
+    text_to_morse_->convert( message, prosign );
+
+    resume_sending();
+}
+
+void
+C_morse::resume_sending()
+{
+    reset();
+    
+    sending_ = true;
+}
+
+S_morse_element_state &
+C_morse::get_send_state()
+{
+    return text_to_morse_->state_;
+}
+
+void
+C_morse::set_send_state( S_morse_element_state & state )
+{
+    text_to_morse_->state_ = state;
 }
 
 const char *

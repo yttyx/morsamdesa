@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,10 +49,9 @@ C_feed_wordlist::C_feed_wordlist( const string & wordlist_file, bool repeat, boo
 
 C_feed_wordlist::~C_feed_wordlist()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_feed_wordlist destructor" );
 }
 
-/** \brief Make available Send a series of words from a file contains a list of them
+/** \brief Make available Send a series of words from a file containing a list of them
 
     Don't re-use a word until all other words in a list have been consumed.
 */
@@ -72,7 +71,7 @@ C_feed_wordlist::start()
         return false;
     }
 
-    word_max_ =  wordlist_.size();
+    word_max_ = wordlist_.size();
 
     if ( word_max_ == 0 )
     {
@@ -80,7 +79,7 @@ C_feed_wordlist::start()
         return false;
     }
 
-    log_writeln_fmt( C_log::LL_INFO, "File: %s, %u words available", wordlist_file_.c_str(), word_max_ );
+    log_writeln_fmt( C_log::LL_INFO, "File: %s, %u word%s available", wordlist_file_.c_str(), word_max_, ( word_max_ == 1 ) ? "" : "s" );
 
     random_number_ = new C_random( word_max_ );
 
@@ -94,16 +93,19 @@ C_feed_wordlist::data_ready()
 }
 
 bool
-C_feed_wordlist::read( string & str )
+C_feed_wordlist::read( C_data_feed_entry & feed_entry )
 {
-    unsigned int new_word_index = random_order_ ? random_number_->not_in_last_n() : word_curr_++;
+    unsigned int new_word_index = random_order_ ? random_number_->next_unique() : word_curr_++;
 
     if ( word_curr_ >= ( word_max_ ) )
     {
         word_curr_ = 0;
     }
 
-    str = wordlist_[ new_word_index ];
+    feed_entry.source   = fsWordlist;
+    feed_entry.mnemonic = "LST";
+    feed_entry.data     = wordlist_[ new_word_index ];
+    feed_entry.discard  = true;
 
     if ( ( ++word_count_ % word_max_ ) == 0 )
     {

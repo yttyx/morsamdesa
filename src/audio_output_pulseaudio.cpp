@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -47,8 +47,6 @@ C_audio_output_pulseaudio::C_audio_output_pulseaudio()
 
 C_audio_output_pulseaudio::~C_audio_output_pulseaudio()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_audio_output_pulseaudio destructor" );
-
     if ( ! pa_handle_ )
     {
         int error = 0;

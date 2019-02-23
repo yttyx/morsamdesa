@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ class C_sound_file : public C_sample_source
 
 public:
 
-    C_sound_file( const string & filename, eSoundMode mode );
+    C_sound_file( const char *description, const string & filename, eSoundMode mode, unsigned int samples, float level );
     virtual ~C_sound_file();
 
     virtual void
@@ -50,6 +50,7 @@ private:
     eSoundMode   mode_;
     string       filename_;
 
+    const char   *description_;
 };
 
 }

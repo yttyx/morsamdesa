@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include <assert.h>
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -65,7 +66,7 @@ format_time_hh_mm( const tm & tm_struct )
 {
     char       buf[ 80 ];
 
-    strftime( buf, sizeof( buf ), "%H:%M", &tm_struct );
+    strftime( buf, sizeof( buf ), "%H %M", &tm_struct );
 
     return buf;
 }

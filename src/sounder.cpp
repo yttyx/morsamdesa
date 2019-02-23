@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,19 +34,17 @@ extern C_config cfg;
 extern C_log    log;
 
 
-C_sounder::C_sounder( const string & filename, unsigned int samples )
-    : C_sound_file( filename, smOneShot )
+C_sounder::C_sounder( const char *description, const string & filename, unsigned int samples, float level )
+    : C_sound_file( description, filename, smOneShot, samples, level )
 {
-    samples_ = samples;
 }
 
 C_sounder::~C_sounder()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_sounder destructor" );
 }
 
 bool
-C_sounder::initialise( C_audio_output * output )
+C_sounder::initialise( shared_ptr< C_audio_output > output )
 {
     output_ = output;
 

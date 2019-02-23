@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@
 #include "log.h"
 #include "misc.h"
 #include "feed_time.h"
+#include "text_to_morse.h"
+
 
 using namespace  morsamdesa;
 
@@ -42,7 +44,6 @@ C_feed_time::C_feed_time( unsigned int period )
 
 C_feed_time::~C_feed_time()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_feed_time destructor" );
 }
 
 bool
@@ -72,7 +73,7 @@ C_feed_time::data_ready()
 }
 
 bool
-C_feed_time::read( string & str )
+C_feed_time::read( C_data_feed_entry & feed_entry )
 {
     bool got_data = false;
 
@@ -82,7 +83,10 @@ C_feed_time::read( string & str )
 
     if ( got_data )
     {
-        str = feed_.front();
+        feed_entry.source   = fsTime;
+        feed_entry.mnemonic = "TIM";
+        feed_entry.data     = feed_.front();
+        feed_entry.discard  = true;
         feed_.pop();
     }
 
@@ -114,10 +118,8 @@ C_feed_time::thread_handler()
                 // It has - format the time and add it to the output queue
                 feed_lock_.lock();
                 
-                string time = "T: ";
+                string time = format_time_hh_mm( tm_now );
 
-                time += format_time_hh_mm( tm_now );
-                
                 feed_.push( time );
                 feed_lock_.unlock();
             }

@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,10 +17,13 @@
 #include <unistd.h>
 
 #include "keyboard.h"
+#include "log.h"
 
 
 namespace morsamdesa
 {
+
+extern C_log log;
 
 C_keyboard kbd;
 

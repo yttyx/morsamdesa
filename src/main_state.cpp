@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,9 +35,9 @@ extern C_log    log;
 // ------------------------------------------------------------------------------------------------
 
 void
-C_main_state::change_state_to( C_main_proc * main_proc, C_main_state * main_state, const char * description )
+C_main_state::change_state_to( C_main_proc * main_proc, shared_ptr< C_main_state > main_state, const char * description )
 {
-    log_writeln_fmt( C_log::LL_VERBOSE_2, "MAIN state: %s", description );
+    log_writeln_fmt( C_log::LL_VERBOSE_1, "MAIN state: %s", description );
 
     main_proc->change_state_to( main_state );
 }
@@ -117,24 +117,47 @@ C_preamble_wait::handler( C_main_proc * p )
 void
 C_message_send::handler( C_main_proc * p )
 {
-    // Precede the message with an STX if the follow on timer from the last message timed out
-    bool add_stx = ! p->follow_on_;
+    p->feed_item_ = p->read_message();
+    
+    eProsign prosign = psNone;
 
-    p->message_ = p->read_message();
-    p->text_to_morse_.convert( p->message_, add_stx );
-
-    if ( LED_MORSE_ACTIVE )
+    if ( p->feed_item_.source == fsTime )
     {
-        p->led_morse_->start_sending();
+        prosign = psTime;
+    }
+    else if ( ! p->follow_on_ )
+    {
+        prosign = psStartOfTransmission;
+    }
+
+    string message;
+
+    if ( p->prefix_ )
+    {
+        message = p->feed_item_.mnemonic + " " + p->feed_item_.data;
     }
     else
     {
-        p->audio_morse_->start_sending();
+        message = p->feed_item_.data;
     }
-    
-    p->send_in_progress_ = true;
 
-    log_writeln_fmt( C_log::LL_INFO, "%s", p->text_to_morse_.get_message().c_str() );
+    // Select the transmitter with the same mnemonic as the feed
+    p->transmitter_->select( p->feed_item_.mnemonic );
+
+    if ( LED_MORSE_ACTIVE )
+    {
+        p->led_morse_->start_sending( message, prosign );
+
+        log_writeln_fmt( C_log::LL_INFO, "%s", p->led_morse_->message().c_str() );
+    }
+    else
+    {
+        p->transmitter_->start_sending( message, prosign );
+    
+        log_writeln_fmt( C_log::LL_INFO, "%s", p->transmitter_->message().c_str() );
+    }
+
+    p->send_in_progress_ = true;
 
     change_state_to( p, C_message_send_wait::s.instance(), "C_message_send_wait" );
 }
@@ -148,17 +171,17 @@ C_message_send_wait::handler( C_main_proc * p )
 {
     if ( p->interrupt_ )
     {
-        p->audio_morse_->interrupt();
+        p->transmitter_->interrupt();
         p->led_morse_->interrupt();
 
-        change_state_to( p, C_message_end::s.instance(), "C_message_end" );
+        change_state_to( p, C_message_end::s.instance(), "C_message_end (interrupt)" );
     }
     
-    bool busy = p->led_morse_->busy() || p->audio_morse_->busy();
+    bool busy = p->led_morse_->busy() || p->transmitter_->busy();
 
     if ( ! busy )
     {
-        change_state_to( p, C_message_end::s.instance(), "C_message_end" );
+        change_state_to( p, C_message_end::s.instance(), "C_message_end (no longer busy)" );
     }
 }
 
@@ -173,7 +196,7 @@ C_message_end::handler( C_main_proc * p )
     p->interrupt_        = false;
     p->send_in_progress_ = false;
 
-    p->mark_message_read( p->message_ );
+    p->mark_message_read( p->feed_item_ );
 
     p->follow_on_ = true;
     p->follow_on_timer_.start( cfg.d().duration_follow_on );

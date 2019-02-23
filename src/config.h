@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,6 +24,9 @@
 
 #include <libconfig.h++>
 
+#include "morse_enum.h"
+
+
 using namespace std;
 using namespace libconfig;
 
@@ -32,13 +35,19 @@ namespace morsamdesa
 
 enum eOption
 {
-    OPT_INVALID,
+    OPT_NONE,
     OPT_DISPLAY_VERBOSITY,
     OPT_DISPLAY_DATETIME,
     OPT_OUTPUT_MODE,
     OPT_OUTPUT_FILE,
+    OPT_OUTPUT_LED,
+    OPT_DELAY_FOLLOW_ON,
+    OPT_DELAY_INTERMESSAGE,
+    OPT_NIGHTMODE_START,
+    OPT_NIGHTMODE_END,
     OPT_REMOTE_ENABLED,
     OPT_FEED_HEADLINES_ENABLED,
+    OPT_FEED_HEADLINES_PREFIX,
     OPT_FEED_HEADLINES_URLS,
     OPT_FEED_HEADLINES_DELAY_MIN,
     OPT_FEED_HEADLINES_DELAY_MAX,
@@ -54,44 +63,49 @@ enum eOption
     OPT_FEED_QUEUE_LENGTH,
     OPT_FEED_QUEUE_UNHELD,
     OPT_FEED_QUEUE_DISCARDABLE,
-    OPT_MORSE_MODE,
-    OPT_MORSE_LED_ENABLED,
-    OPT_MORSE_NIGHTMODE_START,
-    OPT_MORSE_NIGHTMODE_END,
-    OPT_MORSE_ALPHANUMERIC_ONLY,
-    OPT_MORSE_DELAY_FOLLOW_ON,
-    OPT_MORSE_DELAY_INTERMESSAGE,
-    OPT_MORSE_INTER_MESSAGE_TIME,
-    OPT_MORSE_SPEED_AUDIO_CHAR,
-    OPT_MORSE_SPEED_AUDIO_EFFECTIVE,
-    OPT_MORSE_SPEED_LED_CHAR,
-    OPT_MORSE_SPEED_LED_EFFECTIVE,
-    OPT_MORSE_INTERVAL_MULT_CHAR,
-    OPT_MORSE_INTERVAL_MULT_CHAR_E,
-    OPT_MORSE_INTERVAL_MULT_WORD,
-    OPT_MORSE_INTERVAL_MULT_WORD_E,
-    OPT_MORSE_SOUNDER_ARM_DOWN,
-    OPT_MORSE_SOUNDER_ARM_UP,
-    OPT_MORSE_CW_H1_FREQUENCY,
-    OPT_MORSE_CW_H1_LEVEL,
-    OPT_MORSE_CW_H2_MULT,
-    OPT_MORSE_CW_H2_LEVEL,
-    OPT_MORSE_CW_H3_MULT,
-    OPT_MORSE_CW_H3_LEVEL,
-    OPT_MORSE_CW_H4_MULT,
-    OPT_MORSE_CW_H4_LEVEL,
-    OPT_MORSE_CW_RISE_TIME,
-    OPT_MORSE_CW_FALL_TIME,
-    OPT_MORSE_NOISE_BACKGROUND_FILE,
-    OPT_MORSE_NOISE_BG_FILE,
-    OPT_MORSE_NOISE_BG_FADE_TIME,
-    OPT_MORSE_NOISE_BG_LEVEL_QUIESCENT,
-    OPT_MORSE_NOISE_BG_LEVEL_ACTIVE,
-    OPT_MORSE_NOISE_BG_LEVEL_DUCKING,
-    OPT_MORSE_NOISE_CW_BURST_START_DURATION,
-    OPT_MORSE_NOISE_CW_BURST_START_LEVEL,
-    OPT_MORSE_NOISE_CW_BURST_END_DURATION,
-    OPT_MORSE_NOISE_CW_BURST_END_LEVEL
+    OPT_NOISE_BG_FILE,
+    OPT_NOISE_BG_FADE_TIME,
+    OPT_NOISE_BG_LEVEL_QUIESCENT,
+    OPT_NOISE_BG_LEVEL_ACTIVE,
+    OPT_TRANSMITTERS,
+    // Headline feed URL options
+    OPT_URL_MNEMONIC,
+    OPT_URL,
+    // Transmitter options
+    OPT_TRANSMITTER_MNEMONIC,
+    OPT_CODE,
+    OPT_MODE,
+    OPT_ALPHANUMERIC_ONLY,
+    OPT_LEVEL,
+    OPT_INTER_MESSAGE_TIME,
+    OPT_SPEED_AUDIO_CHAR,
+    OPT_SPEED_AUDIO_EFFECTIVE,
+    OPT_SPEED_LED_CHAR,
+    OPT_SPEED_LED_EFFECTIVE,
+    OPT_INTERVAL_MULT_CHAR,
+    OPT_INTERVAL_MULT_CHAR_E,
+    OPT_INTERVAL_MULT_WORD,
+    OPT_INTERVAL_MULT_WORD_E,
+    OPT_SOUNDER_ARM_DOWN,
+    OPT_SOUNDER_ARM_UP,
+    OPT_SOUNDER_LO,
+    OPT_SOUNDER_HI,
+    OPT_SPARKGAP_DOT,
+    OPT_SPARKGAP_DASH,
+    OPT_CW_H1_FREQUENCY,
+    OPT_CW_H1_LEVEL,
+    OPT_CW_H2_MULT,
+    OPT_CW_H2_LEVEL,
+    OPT_CW_H3_MULT,
+    OPT_CW_H3_LEVEL,
+    OPT_CW_H4_MULT,
+    OPT_CW_H4_LEVEL,
+    OPT_CW_RISE_TIME,
+    OPT_CW_FALL_TIME,
+    OPT_CW_NOISE_BURST_START_DURATION,
+    OPT_CW_NOISE_BURST_START_LEVEL,
+    OPT_CW_NOISE_BURST_END_DURATION,
+    OPT_CW_NOISE_BURST_END_LEVEL
 };
 
 enum eOutputMode
@@ -101,139 +115,156 @@ enum eOutputMode
     OMODE_INVALID
 };
 
-enum eMorseMode
+enum eFieldType
 {
-    MM_SOUNDER,
-    MM_CW,
-    MM_INVALID
+    FLD_NONE,
+    FLD_STRING,
+    FLD_INTEGER,
+    FLD_FLOAT,
+    FLD_BOOLEAN,
+    FLD_STRING_ARRAY,
+    FLD_URL_ARRAY,
+    FLD_TRANSMITTER_ARRAY,
+    FLD_MORSE_MODE,
+    FLD_MORSE_CODE,
+    FLD_OUTPUT_MODE,
+    FLD_LEVEL
 };
 
-
-struct S_config         // Config settings
+struct S_option
 {
-    int                 display_verbosity;
-    bool                display_datetime;
-    string              output_mode;
-    string              output_file;
-    bool                remote_enabled;
-    bool                feed_headlines_enabled;
-    vector< string >    feed_headlines_urls;
-    int                 feed_headlines_delay_min;
-    int                 feed_headlines_delay_max;
-    vector< string >    feed_headlines_filters;
-    bool                feed_time_enabled;
-    int                 feed_time_interval;
-    bool                feed_fixed_enabled;
-    string              feed_fixed_message;
-    bool                feed_wordlist_enabled;
-    bool                feed_wordlist_random;
-    bool                feed_wordlist_repeat;
-    string              feed_wordlist_file;
-    int                 feed_queue_length;
-    int                 feed_queue_unheld;
-    int                 feed_queue_discardable;
-    string              morse_mode;
-    bool                morse_led_enabled;
-    string              morse_nightmode_start;
-    string              morse_nightmode_end;
-    bool                morse_alphanumeric_only;
-    float               morse_delay_follow_on;
-    float               morse_delay_intermessage;
-    float               morse_speed_audio_char;
-    float               morse_speed_audio_effective;
-    float               morse_speed_led_char;
-    float               morse_speed_led_effective;
-    float               morse_interval_multiplier_char;
-    float               morse_interval_multiplier_word;
-    string              morse_sounder_arm_down;
-    string              morse_sounder_arm_up;
-    int                 morse_cw_h1_frequency;
-    float               morse_cw_h1_level;
-    float               morse_cw_h2_multiplier;
-    float               morse_cw_h2_level;
-    float               morse_cw_h3_multiplier;
-    float               morse_cw_h3_level;
-    float               morse_cw_h4_multiplier;
-    float               morse_cw_h4_level;
-    float               morse_cw_rise_time;
-    float               morse_cw_fall_time;
-    string              morse_noise_bg_file;
-    float               morse_noise_bg_fade_time;
-    float               morse_noise_bg_level_quiescent;
-    float               morse_noise_bg_level_active;
-    float               morse_noise_cw_burst_start_duration;
-    float               morse_noise_cw_burst_start_level;
-    float               morse_noise_cw_burst_end_duration;
-    float               morse_noise_cw_burst_end_level;
+    eOption       opt;
+    eFieldType    field_type;
+    int           field_offset;
+    const char    *field_path;
+    const char    *min;
+    const char    *max;
 };
 
-struct S_derived        // Settings derived from config settings
+struct S_url
 {
-    eOutputMode  output_mode;
-    eMorseMode   morse_mode;
+    string mnemonic;
+    string url;
+};
 
-    // Pulseaudio output durations
-    unsigned int audio_duration_dot;                    // mS
-    unsigned int audio_duration_dash;                   // mS
-    unsigned int audio_duration_element;                // mS
-    unsigned int audio_duration_interelement;           // mS
-    unsigned int audio_duration_interletter;            // mS   actual (Farnsworth timing plus interval multiplication)
-    unsigned int audio_duration_interletter_fw;         // mS   Farnsworth timing
-    unsigned int audio_duration_interword;              // mS   actual (Farnsworth timing plus interval multiplication)
-    unsigned int audio_duration_interword_fw;           // mS   Farnsworth timing
-    unsigned int audio_duration_1min_check;             // mS
+struct S_transmitter
+{
+    S_transmitter()
+    {
+        morse_code = MC_INVALID;
+        morse_mode = MM_INVALID;
+        alphanumeric_only = false;
+        level = 0.0;
+        speed_char = 0.0;
+        speed_effective = 0.0;
+        interval_multiplier_char = 0.0;
+        interval_multiplier_word = 0.0;
+        cw_h1_frequency = 0;
+        cw_h1_level = 0.0;
+        cw_h2_multiplier = 0.0;
+        cw_h2_level = 0.0;
+        cw_h3_multiplier = 0.0;
+        cw_h3_level = 0.0;
+        cw_h4_multiplier = 0.0;
+        cw_h4_level = 0.0;
+        cw_rise_time = 0.0;
+        cw_fall_time = 0.0;
+        cw_noise_burst_start_duration = 0.0;
+        cw_noise_burst_start_level = 0.0;
+        cw_noise_burst_end_duration = 0.0;
+        cw_noise_burst_end_level = 0.0;
+    }
 
-    // LED output durations
-    unsigned int led_duration_dot;                      // mS
-    unsigned int led_duration_dash;                     // mS
-    unsigned int led_duration_element;                  // mS
-    unsigned int led_duration_interelement;             // mS
-    unsigned int led_duration_interletter;              // mS   actual (Farnsworth timing plus interval multiplication)
-    unsigned int led_duration_interletter_fw;           // mS   Farnsworth timing
-    unsigned int led_duration_interword;                // mS   actual (Farnsworth timing plus interval multiplication)
-    unsigned int led_duration_interword_fw;             // mS   Farnsworth timing
-    unsigned int led_duration_1min_check;               // mS
+    string      mnemonic;
+    eMorseCode  morse_code;
+    eMorseMode  morse_mode;
+    bool        alphanumeric_only;
+    float       speed_char;
+    float       speed_effective;
+    float       interval_multiplier_char;
+    float       interval_multiplier_word;
+    string      sounder_arm_down;
+    string      sounder_arm_up;
+    string      sounder_hi;
+    string      sounder_lo;
+    string      sparkgap_dot;
+    string      sparkgap_dash;
+    int         cw_h1_frequency;
+    float       level;
+    float       cw_h1_level;
+    float       cw_h2_multiplier;
+    float       cw_h2_level;
+    float       cw_h3_multiplier;
+    float       cw_h3_level;
+    float       cw_h4_multiplier;
+    float       cw_h4_level;
+    float       cw_rise_time;
+    float       cw_fall_time;
+    float       cw_noise_burst_start_duration;
+    float       cw_noise_burst_start_level;
+    float       cw_noise_burst_end_duration;
+    float       cw_noise_burst_end_level;
+};
 
+struct S_config
+{
+    int                     display_verbosity;
+    bool                    display_datetime;
+    eOutputMode             output_mode;
+    string                  output_file;
+    bool                    output_led;
+    float                   delay_follow_on;
+    float                   delay_intermessage;
+    string                  nightmode_start;
+    string                  nightmode_end;
+    bool                    feed_headlines_enabled;
+    bool                    feed_headlines_prefix;
+    vector< S_url >         feed_headlines_urls;
+    int                     feed_headlines_delay_min;
+    int                     feed_headlines_delay_max;
+    vector< string >        feed_headlines_filters;
+    bool                    feed_time_enabled;
+    int                     feed_time_interval;
+    bool                    feed_fixed_enabled;
+    string                  feed_fixed_message;
+    bool                    feed_wordlist_enabled;
+    bool                    feed_wordlist_random;
+    bool                    feed_wordlist_repeat;
+    string                  feed_wordlist_file;
+    int                     feed_queue_unheld;
+    string                  noise_bg_file;
+    float                   noise_bg_fade_time;
+    float                   noise_bg_level_quiescent;
+    float                   noise_bg_level_active;
+    vector< S_transmitter > transmitters;
+    S_transmitter           led;
+    S_transmitter           command;
+    S_transmitter           time;
+};
+
+struct S_derived                                        // Settings derived from config settings
+{
+    unsigned int tick_samples;                          // Number of samples in a 20mS tick
+    unsigned int duration_tick;                         // mS
     unsigned int duration_follow_on;                    // mS
     unsigned int duration_intermessage;                 // mS
-
-    unsigned int dit_samples;                   // Number of samples in a dit
-    unsigned int dah_samples;                   // Number of samples in a dah
-    unsigned int interelement_samples;          // Number of samples between elements
-    unsigned int interletter_samples_fw;        // Number of samples between letters
-    unsigned int interletter_samples;           // Number of samples between letters
-    unsigned int interword_samples_fw;          // Number of samples between words
-    unsigned int interword_samples;             // Number of samples between words
-
-    unsigned int intermessage_samples;          // Number of samples between messages
-
-    unsigned int cw_rising_edge_samples;        // Number of samples in a CW rising edge
-    unsigned int cw_falling_edge_samples;       // Number of samples in a CW falling edge
-    unsigned int cw_burst_noise_start_samples;  // Number of samples in burst of white noise at the start of a Morse dit or dah
-    unsigned int cw_burst_noise_end_samples;    // Number of samples in burst of white noise at the end of a Morse dit or dah
-
-    unsigned int bg_noise_fade_samples;         // Number of samples in background noise fade up/fade down
-
-    unsigned int duration_tick;                 // mS
-    unsigned int tick_samples;                  // Number of samples in a 20mS tick
-
-    // Levels
-
-    float cw_h1_level;                          // Normalised 1st harmonic level
-    float cw_h2_level;                          //
-    float cw_h3_level;                          //
-    float cw_h4_level;                          //
-
-    float cw_noise_level;                       //
-    float cw_noise_burst_start_level;           //
-    float cw_noise_burst_end_level;             //
-    float bg_noise_level_active;                //
-    float bg_noise_level_quiescent;             //
-
-    bool  bg_noise;
-    bool  bg_noise_fading;
-
+    unsigned int intermessage_samples;                  // Number of samples between messages
+    unsigned int bg_noise_fade_samples;                 // Number of samples in background noise fade up/fade down
+                                                        
+    float bg_noise_level_active;                        //
+    float bg_noise_level_quiescent;                     //
+    bool  bg_noise;                                     //
+    bool  bg_noise_fading;                              //
 };
+
+const char *
+to_string( eOutputMode output_mode_e );
+
+const char *
+to_string( eMorseCode morse_code_e );
+
+const char *
+to_string( eMorseMode morse_mode_e );
 
 
 class C_config
@@ -251,6 +282,17 @@ public:
     const S_derived &
     d() { return derived_; }
 
+    void
+    to_enum( const string & output_mode_s, eOutputMode & output_mode_e );
+
+
+    void
+    to_enum( const string & morse_code_s, eMorseCode & morse_code_e );
+
+
+    void
+    to_enum( const string & morse_mode_s, eMorseMode & morse_mode_e );
+
 protected:
 
     C_config( const C_config & ){}
@@ -264,23 +306,8 @@ protected:
     bool
     read( string & filename, string & profile_list );
 
-    void
+    bool
     calculate_derived_settings();
-
-    unsigned int
-    calculate_element_duration( float morse_speed_char );
-
-    void
-    calculate_farnsworth_delays( float        morse_speed_char
-                               , float        morse_speed_effective
-                               , unsigned int & intercharacter_delay
-                               , unsigned int & interword_delay );
-
-    unsigned int
-    calculate_check_1min_duration( unsigned int duration_element
-                                 , unsigned int duration_interletter
-                                 , unsigned int duration_interword
-                                 , float        effective_char_speed );
 
     void
     display_settings();
@@ -288,11 +315,29 @@ protected:
     bool
     read_profile( const string & profile );
 
-    bool
-    cross_checks();
+    void
+    read_option_table( const Setting & parent, const S_option * options, void * record );
 
     void
-    separate_path_and_list( const string &full_path, string &path, string &list );
+    url_array( const Setting & parent, const char * field_name, vector< S_url > & url_array );
+
+    void
+    transmitter_array( const Setting & parent, const char * field_name, vector< S_transmitter > & transmitter_array );
+
+    bool
+    setting_checks();
+
+    bool
+    setting_checks( const S_option * options, void * record );
+
+    bool
+    setting_checks( const S_option * options, vector< S_url > & urls );
+
+    bool
+    setting_checks( const S_option * options, vector< S_transmitter > & transmitters );
+
+    void
+    separate_path_and_list( const string & full_path, string & path, string & list );
 
     const char *
     to_string( bool setting );
@@ -300,20 +345,8 @@ protected:
     const char *
     to_string( eOption opt );
 
-    void
-    to_enum( const string & output_mode_s, eOutputMode & output_mode_e );
-
-    const char *
-    to_string( eOutputMode output_mode_e );
-
-    void
-    to_enum( const string & morse_mode_s, eMorseMode & morse_mode_e );
-
-    const char *
-    to_string( eMorseMode morse_mode_e );
-
-    double
-    lin_to_exp( double val );
+    string
+    to_string( eOption opt1, eOption opt2 );
 
     bool
     valid_time( string & time );

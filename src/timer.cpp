@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ C_timer::C_timer()
 {
     duration_ = 0;
     active_   = false;
+    expired_  = false;
 }
 
 void
@@ -43,6 +44,13 @@ C_timer::start( long milliseconds )
     active_   = true;
 
     clock_gettime( CLOCK_REALTIME, &start_time_ );
+}
+
+void
+C_timer::stop()
+{
+    active_  = false;
+    expired_ = false;
 }
 
 bool
@@ -57,19 +65,25 @@ C_timer::expired()
 
     long elapsed_ms = ( elapsed_time.tv_sec * 1000 ) + ( elapsed_time.tv_nsec / 1000000 );
 
-    bool expired = elapsed_ms >= duration_;
+    expired_ = elapsed_ms >= duration_;
 
-    if ( expired )
+    if ( expired_ )
     {
         active_ = false;
     }
 
-    return expired;
+    return expired_;
 }
 
-string
-C_timer::elapsed()
+// Returns elapsed time in mS
+unsigned int
+C_timer::elapsed_ms()
 {
+    if ( ! active_ )
+    {
+        return 0;
+    }
+
     struct timespec curr_time;
     struct timespec elapsed_time;
 
@@ -77,7 +91,7 @@ C_timer::elapsed()
 
     diff( start_time_, curr_time, elapsed_time );
 
-    return C_log::format_string( "%ld.%ld", elapsed_time.tv_sec, elapsed_time.tv_nsec / 1000000 );
+    return ( elapsed_time.tv_sec * 1000) + ( elapsed_time.tv_nsec / 1000000 );
 }
 
 void
@@ -94,5 +108,45 @@ C_timer::diff( const timespec & start, const timespec & end, timespec & elapsed 
         elapsed.tv_nsec = end.tv_nsec - start.tv_nsec;
     }
 }
+
+timespec
+C_timer::current_time()
+{
+    struct timespec curr_time;
+
+    clock_gettime( CLOCK_REALTIME, &curr_time );
+
+    return curr_time;
+}
+
+// Returns elapsed time in seconds. Fractions of a second are ignored.
+unsigned int
+C_timer::elapsed_sec( const timespec & start_time )
+{
+    struct timespec curr_time;
+    struct timespec elapsed_time;
+
+    clock_gettime( CLOCK_REALTIME, &curr_time );
+
+    diff( start_time, curr_time, elapsed_time );
+
+    return ( elapsed_time.tv_sec );
+}
+
+string
+C_timer::elapsed_str( const timespec & start_time )
+{
+    struct timespec curr_time;
+    struct timespec elapsed_time;
+
+    clock_gettime( CLOCK_REALTIME, &curr_time );
+
+    diff( start_time, curr_time, elapsed_time );
+
+    string age = C_log::format_string( "%2ldh %2ldm", elapsed_time.tv_sec / 3600, ( elapsed_time.tv_sec / 60 ) % 60 );
+
+    return age;
+}
+
 
 }

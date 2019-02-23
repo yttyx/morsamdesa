@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 #define morsamdesa_H
 
 #include "main_proc.h"
-#include "remote_control.h"
 
 
 using namespace std;
@@ -46,7 +45,8 @@ private:
 private:
 
     C_main_proc         main_;
-    C_remote_stub       *rc_;
+    C_light_morse_input morse_input_;
+
 };
 
 }

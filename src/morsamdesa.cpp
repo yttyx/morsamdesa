@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,11 +23,14 @@
 #include "feed_headlines.h"
 #include "feed_time.h"
 #include "feed_wordlist.h"
-#include "remote_control.h"
+#include "gpio.h"
 #include "keyboard.h"
+#include "light_morse_input.h"
 #include "log.h"
 #include "misc.h"
+#include "morse_timing.h"
 #include "morsamdesa.h"
+#include "random.h"
 
 using namespace  morsamdesa;
 
@@ -36,25 +39,19 @@ namespace morsamdesa
 {
 
 extern C_config   cfg;
-extern C_log      log;
+extern C_gpio     gpio;
 extern C_keyboard kbd;
+extern C_log      log;
 
 const char *VERSION = "0.98";
 
 
 C_morsamdesa::C_morsamdesa()
 {
-    rc_ = NULL;
 }
 
 C_morsamdesa::~C_morsamdesa()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_morsamdesa destructor" );
-
-    if( rc_ )
-    {
-        delete rc_;
-    }
 }
 
 /** \brief main function
@@ -71,21 +68,20 @@ C_morsamdesa::run( int argc, char *argv[] )
     log_writeln_fmt( C_log::LL_INFO, "morsamdesa version %s, date %s", VERSION, __DATE__ );
     log_writeln( C_log::LL_INFO, "" );
 
+    C_random::init();
+
     if ( cfg.read( argc, argv ) )
     {
         log_writeln( C_log::LL_INFO, "Starting up" );
 
-        rc_ = cfg.c().remote_enabled ? new C_remote_control() : new C_remote_stub();
-
-        if ( main_.initialise() && rc_->initialise() )
+        if ( gpio.initialise() && morse_input_.initialise() && main_.initialise() )
         {
-            if ( main_.start() && rc_->start() )
+            if ( main_.start() && morse_input_.start() )
             {
                 do_datafeeds();
 
                 main_.stop();
-
-                rc_->stop();
+                morse_input_.stop();
             }
         }
 
@@ -109,7 +105,7 @@ C_morsamdesa::do_datafeeds()
                                                  cfg.c().feed_headlines_delay_min,
                                                  cfg.c().feed_headlines_delay_max ) );
 
-            log_writeln_fmt( C_log::LL_INFO, "Added headline feed %s", cfg.c().feed_headlines_urls[ ii ].c_str() );
+            log_writeln_fmt( C_log::LL_INFO, "Added headline feed %s", cfg.c().feed_headlines_urls[ ii ].mnemonic.c_str() );
         }
     }
 
@@ -122,7 +118,7 @@ C_morsamdesa::do_datafeeds()
 
     if ( cfg.c().feed_fixed_enabled )
     {
-        datafeeds.add( new C_feed_fixed( &cfg.c().feed_fixed_message ) );
+        datafeeds.add( new C_feed_fixed( cfg.c().feed_fixed_message ) );
 
         log_writeln( C_log::LL_INFO, "Added fixed feed" );
     }
@@ -138,28 +134,28 @@ C_morsamdesa::do_datafeeds()
 
     datafeeds.start();
 
+    // This delay is only really relevant to the headline feed so that all configured headline feeds can be
+    // read in before entering the main feed loop. This is to mix in the headlines from different feeds from
+    // the outset, rather than starting off with blocks of headlines from each headline feed source.
+    log_writeln( C_log::LL_INFO, "Delay for feed startup" );
+    delay( 3000 );
+
     bool all_feeds_done = false;
 
     while ( ( ! abort() ) && ( ! all_feeds_done ) )
     {
-        eCommand cmd = rc_->read();
+        main_.command( morse_input_.read() );
 
-        if ( cmd != cmdNone )
+        C_data_feed_entry feed_item;
+
+        if ( datafeeds.read( feed_item ) )
         {
-            main_.command( cmd );
-        }
-
-        string  message;
-        bool    discard = false;
-
-        if ( datafeeds.read( message, discard, main_.message_queue_full() ) )
-        {
-            main_.queue_message( message, discard );
+            main_.queue_message( feed_item );
         }
 
         all_feeds_done = datafeeds.all_read();
 
-        delay( 100 );
+        delay( 200 );
     }
 
     datafeeds.stop();

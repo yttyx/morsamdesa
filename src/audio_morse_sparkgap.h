@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -12,43 +12,38 @@
     GNU General Public License for more details.
 */
 
-// remote_stub.h
+// audio_morse_sparkgap.h
 
-#ifndef    remote_stub_I
-#define    remote_stub_I
+#ifndef audio_morse_sparkgap_H
+#define audio_morse_sparkgap_H
 
-#include "command.h"
+#include "audio_output.h"
+#include "audio_morse.h"
+#include "cw.h"
+#include "silence.h"
+#include "sound_file.h"
 
 
 namespace morsamdesa
 {
 
-class C_remote_stub
+class C_audio_morse_sparkgap : public C_audio_morse
 {
-
 public:
 
-    C_remote_stub() { abort_ = false; }
-    virtual ~C_remote_stub() {}
+    C_audio_morse_sparkgap( const S_transmitter & transmitter );
+    virtual ~C_audio_morse_sparkgap();
 
     virtual bool
-    initialise();
-
-    virtual bool
-    start() { return true; }
-
-    virtual void
-    stop() {}
-
-    virtual eCommand
-    read() { return cmdNone; }
+    initialise( shared_ptr< C_audio_output > output );
 
 protected:
 
-    bool    abort_;
+    virtual void
+    select_element_sound( eMorseElement element );
 
 };
 
 }
 
-#endif    // remote_stub_I
+#endif // audio_morse_sparkgap_H

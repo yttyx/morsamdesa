@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ class C_feed_fixed : public C_data_feed
 {
 public:
 
-    C_feed_fixed( const string * message ){ message_ = message; }
+    C_feed_fixed( const string & message );
     ~C_feed_fixed();
 
     virtual bool
@@ -43,14 +43,11 @@ public:
     data_ready();
 
     virtual bool
-    discard(){ return true; }
-
-    virtual bool
-    read( string & str );
+    read( C_data_feed_entry & feed_entry );
 
 private:
 
-    const string * message_;
+    C_data_feed_entry feed_entry_;
 };
 
 }

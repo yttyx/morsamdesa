@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,11 +18,37 @@
 #define datasource_H
 
 #include <string>
+#include <vector>
+
+#include "feed_source.h"
+#include "timer.h"
+
 
 using namespace std;
 
 namespace morsamdesa
 {
+
+struct C_data_feed_entry
+{
+public:
+
+    C_data_feed_entry() {}
+    C_data_feed_entry( string & src, string & text ) { mnemonic = src; data = text; discard = false; }
+    ~C_data_feed_entry() {}
+
+    void
+    operator=( const C_data_feed_entry & rhs );
+
+public:
+
+    eFeedSource source;
+    string      mnemonic;
+    string      data;
+    timespec    time;
+    bool        discard;
+};
+
 
 class C_data_feed
 {
@@ -45,10 +71,7 @@ public:
     no_more_data(){ return false; }
 
     virtual bool
-    discard(){ return false; }             // Discard message once sent e.g. for a time feed, replaying is not useful
-
-    virtual bool
-    read( string & str ){ return false; }
+    read( C_data_feed_entry & feed_item ) { return false; }
 
 protected:
 
@@ -74,7 +97,7 @@ public:
     stop();
 
     bool
-    read( string & message, bool & discard, bool destination_queue_full );
+    read( C_data_feed_entry & feed_item );
 
     virtual bool
     all_read();
@@ -82,7 +105,7 @@ public:
 protected:
 
     vector< C_data_feed * > data_feeds_;
-
+    unsigned int            feed_idx_prev_;
 };
 
 }

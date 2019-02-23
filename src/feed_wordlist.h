@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -47,10 +47,7 @@ public:
     no_more_data() { return no_more_data_; }
 
     virtual bool
-    discard(){ return true; }
-
-    virtual bool
-    read( string & str );
+    read( C_data_feed_entry & feed_entry );
 
 private:
 

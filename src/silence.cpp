@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,12 +37,12 @@ extern C_config cfg;
 extern C_log    log;
 
 C_silence::C_silence()
+    : C_sample_source( 0.0 )
 {
 }
 
 C_silence::~C_silence()
 {
-    log_writeln( C_log::LL_VERBOSE_3, "C_silence destructor" );
 }
 
 
@@ -90,7 +90,7 @@ C_silence::write( bool & samples_exhausted )
 }
 
 bool
-C_silence::initialise( unsigned int samples,  C_audio_output * output )
+C_silence::initialise( unsigned int samples, shared_ptr< C_audio_output > output )
 {
     samples_ = samples;
     output_  = output;

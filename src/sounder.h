@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,18 +28,11 @@ class C_sounder : public C_sound_file
 
 public:
 
-    C_sounder( const string & filename, unsigned int samples );
+    C_sounder( const char *description, const string & filename, unsigned int samples, float level );
     ~C_sounder();
 
     bool
-    initialise( C_audio_output * output );
-
-    void
-    write();
-
-protected:
-
-private:
+    initialise( shared_ptr< C_audio_output > output );
 
 };
 

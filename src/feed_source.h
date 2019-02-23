@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  yttyx
+    Copyright (C) 2018  yttyx. This file is part of morsamdesa.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -12,25 +12,23 @@
     GNU General Public License for more details.
 */
 
-// tone_type.h
+// feed_source.h
 
-#ifndef tone_type_H
-#define tone_type_H
+#ifndef FEED_SOURCE_H
+#define FEED_SOURCE_H
 
 namespace morsamdesa
 {
 
-enum eToneType
+enum eFeedSource
 {
-    ttDit,
-    ttDah,
-    ttUnmute,
-    ttMute,
-    ttInterrupt,
-    ttPrevious,
-    ttNext
+    fsNone,
+    fsFixed,
+    fsHeadlines,
+    fsTime,
+    fsWordlist
 };
 
 }
 
-#endif // tone_type_H
+#endif  // FEED_SOURCE_H
